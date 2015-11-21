@@ -1,0 +1,160 @@
+/********************************************************************************
+						Variables uses to the dc motors control
+********************************************************************************/ 
+float  DC_error,Straight_Speed = 150; // error value for the control
+unsigned int DC_PWM_R_1, //Values for the right and left dc motors.
+			 DC_PWM_L_1,
+			 DC_PWM_R_2, 
+			 DC_PWM_L_2; 
+float count_straight; 
+unsigned int gain_dc_motor_Kp_A,
+             gain_dc_motor_Kp_B, 
+             gain_dc_motor_Kp_C,
+             PWM_MAX_MOTORS_H,
+             PWM_MAX_SPEED,
+             Straight_brake_cont,
+             Straight_brake,
+             finish_flag = 0,
+             brake_delay = 0;
+
+#define ERROR_MAX	0.3
+#define ERROR_MIN	-0.3
+#define MOTORS2_MIN_SPEED	255
+
+/********************************************************************************
+						This function has the algorithm control to
+						control the dc motors.
+********************************************************************************/ 
+void DC_MOTORS_CONTROL(void)
+{
+	DC_DP_parameters();
+	DC_error=error;
+	if(DC_error > ERROR_MAX)      DC_error = ERROR_MAX;
+	else if(DC_error < ERROR_MIN) DC_error = ERROR_MIN;
+	
+	 		if(DC_error <= 0)   //spin to right
+	        {
+	                DC_PWM_R_2 = 255 - ((-1)*DC_error*gain_dc_motor_Kp_B);//--
+	                DC_PWM_L_2 = 255 - ((-1)*DC_error*gain_dc_motor_Kp_A);//++
+	                DC_PWM_R_1=PWM_MAX_MOTORS_H - (DC_error*gain_dc_motor_Kp_C);
+	                DC_PWM_L_1=PWM_MAX_MOTORS_H + (DC_error*gain_dc_motor_Kp_C);
+	                
+	                
+	        }
+	        else                            //spin to left
+	        {
+	                
+	                DC_PWM_R_2 = 255 - (DC_error*gain_dc_motor_Kp_A);//++
+	                DC_PWM_L_2 = 255 - (DC_error*gain_dc_motor_Kp_B);//--
+	                DC_PWM_R_1=PWM_MAX_MOTORS_H + ((-1)*DC_error*gain_dc_motor_Kp_C);
+	                DC_PWM_L_1=PWM_MAX_MOTORS_H - ((-1)*DC_error*gain_dc_motor_Kp_C);
+	        }
+	
+	DC_MOTORS();
+	//PTA13_TEST_LOW;
+}
+
+/********************************************************************************
+						This function receives the final velocity 
+						parameters to control the tires of the car.
+********************************************************************************/ 
+
+void DC_MOTORS_SPEED(void)
+{
+	if (DC_PWM_R_1>255) DC_PWM_R_1 =255;
+	if (DC_PWM_R_2>255) DC_PWM_R_2 =255;
+	MOTOR1_R_SPEED(DC_PWM_R_1);	
+	MOTOR2_R_SPEED(DC_PWM_R_2);
+	
+	MOTOR1_L_SPEED(DC_PWM_L_1);
+	MOTOR2_L_SPEED(DC_PWM_L_2);
+}
+
+/********************************************************************************
+						This function contains the different behavior
+						of the car.
+********************************************************************************/ 
+
+void DC_MOTORS(void)
+{
+	/*if((zeros_number >= min_zeros_track && zeros_number <= max_zeros_track) || (finish_flag == 1)) // stop the car with the camera
+		{
+			finish_flag = 1;
+			if(brake_delay > 80) stop_car();
+			brake_delay = brake_delay + 1;
+		}
+		else */if((DC_error < 0.03)&&(DC_error > -.03)&&(Straight_Speed < PWM_MAX_SPEED))// auto acceleration task
+			{
+			Straight_Speed = Straight_Speed + 1;
+			if(Straight_Speed >= PWM_MAX_SPEED) Straight_Speed = PWM_MAX_SPEED;
+			MOTOR1_R_SPEED(Straight_Speed);	
+			MOTOR1_L_SPEED(Straight_Speed);
+			MOTOR2_R_SPEED(MOTORS2_MIN_SPEED);	
+			MOTOR2_L_SPEED(MOTORS2_MIN_SPEED);
+			}
+		else // the car is in curves (normal comportment)
+		{
+			DC_MOTORS_SPEED();
+			Straight_Speed=PWM_MAX_MOTORS_H ;
+		}
+}
+
+/********************************************************************************
+						This function contains the different velocities
+						of the car.
+********************************************************************************/ 
+
+void DC_DP_parameters(void)
+{
+        switch ((DIP_SW_VAL() & 0xC) >> 2) 
+        {
+                case 0:
+                        
+                        LEDS_VEL_STATE_0;
+                        gain_dc_motor_Kp_A      =(400)  ;                                 //=(255-Valor_Maximo_L)/errorMaximo 
+                        gain_dc_motor_Kp_B      =(0)    ;                                 // brake value                                                
+                        gain_dc_motor_Kp_C      = (0)    ;                                 //                                                                    
+                        PWM_MAX_MOTORS_H                =(130)  ;                                 // maximum velocity to the car in curves.     
+                        PWM_MAX_SPEED                   =(150)  ;                                 // maximum speed to the car in Straight.      
+                        Straight_brake_cont             =(255)  ;                                 // constant brake value
+                        Straight_brake                  =(255)  ;                                 // brake value when is at the max velocity.
+                        
+                        break;
+                        
+                case 1: 
+                        LEDS_VEL_STATE_1;
+                        gain_dc_motor_Kp_A      =(400)  ;                                 //=(255-Valor_Maximo_L)/errorMaximo 
+                        gain_dc_motor_Kp_B              =(0)    ;                                 // brake value                                                
+                        gain_dc_motor_Kp_C              =(400)  ;                                 //                                                                    
+                        PWM_MAX_MOTORS_H                =(150)  ;                                 // maximum velocity to the car in curves.     
+                        PWM_MAX_SPEED                   =(210)  ;                                 // maximum speed to the car in Straight.      
+                        Straight_brake_cont             =(230)  ;                                 // constant brake value
+                        Straight_brake                  =(255)  ;                                 // brake value when is at the max velocity.
+                        break;
+                        
+                case 2:
+                        LEDS_VEL_STATE_2;
+                        gain_dc_motor_Kp_A      =(400)  ;                                 //=(255-Valor_Maximo_L)/errorMaximo 
+                        gain_dc_motor_Kp_B              =(50)   ;                                 // brake value                                                
+                        gain_dc_motor_Kp_C              =(400)  ;                                 //                                                                    
+                        PWM_MAX_MOTORS_H                =(150)  ;                                 // maximum velocity to the car in curves.     
+                        PWM_MAX_SPEED                   =(230)  ;                                 // maximum speed to the car in Straight.      
+                        Straight_brake_cont             =(250)  ;                                  // constant brake value
+                        Straight_brake                  =(255)  ;                                 // brake value when is at the max velocity.
+                        break;
+        
+                case 3:
+                        LEDS_VEL_STATE_3;
+                        gain_dc_motor_Kp_A      =(400)  ;                                 //=(255-Valor_Maximo_L)/errorMaximo 
+                        gain_dc_motor_Kp_B              =(50)   ;                                 // brake value                                                
+                        gain_dc_motor_Kp_C              =(400)  ;                                 //                                                                    
+                        PWM_MAX_MOTORS_H                =(150)  ;                                 // maximum velocity to the car in curves.     
+                        PWM_MAX_SPEED                   =(240)  ;                                 // maximum speed to the car in Straight.      
+                        Straight_brake_cont             =(245)  ;                                 // constant brake value
+                        Straight_brake                  =(255)  ;                                 // brake value when is at the max velocity.
+                        break;
+                default:
+                        break;
+        }
+        Straight_Speed=PWM_MAX_MOTORS_H;
+}

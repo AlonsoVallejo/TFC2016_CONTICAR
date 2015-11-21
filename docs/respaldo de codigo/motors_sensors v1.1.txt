@@ -1,0 +1,209 @@
+* DC_Motors_Control.c
+ *
+ *  Created on: Apr 15, 2015
+ *      Author: Vallejo
+ */
+
+#include "DC_Motors_Control.h"
+
+/********************************************************************************
+						Variables uses to the dc motors control
+********************************************************************************/ 
+float  DC_error; // error value for the control
+
+unsigned int DC_PWM_R_1, //Values for the right and left dc motors.
+			 DC_PWM_L_1,
+			 DC_PWM_R_2, 
+			 DC_PWM_L_2,
+			 DC_PWM_R,
+			 DC_PWM_L; 
+
+unsigned int PWM_MAX_MOTORS_H,
+			 finish_flag = 0,
+			 brake_delay = 0;
+             
+unsigned int sp_pwm_r,
+			 sp_pwm_l,
+			 wait_next_sample = 50;
+			 
+int diff_pwm_r,
+	diff_pwm_l,
+	pwm_r_accel,
+	pwm_l_accel,
+	pwm_r_brake,
+	pwm_l_brake;             
+
+#define ERROR_MAX			1.0
+#define ERROR_MIN			-1.0
+#define MOTORS1_MIN_SPEED	0
+#define MOTORS2_MIN_SPEED	255
+
+/********************************************************************************
+						This function has the algorithm control to
+						control the dc motors.
+********************************************************************************/ 
+void DC_MOTORS_CONTROL(void)
+{
+	DC_DP_parameters();
+	PUSH_BUTTON_TASK();
+	DC_error=error*3.33;
+	if(DC_error > ERROR_MAX)      DC_error = ERROR_MAX;
+	else if(DC_error < ERROR_MIN) DC_error = ERROR_MIN;
+	
+	 if(DC_error <= 0)   //spin to right
+	 {
+		 sp_pwm_r = PWM_MAX_MOTORS_H + (PWM_MAX_MOTORS_H*DC_error*0.2);//--
+		 sp_pwm_l = PWM_MAX_MOTORS_H + (PWM_MAX_MOTORS_H*DC_error*0.4);//++
+	 }
+	 else                            //spin to left
+	 {
+		 sp_pwm_r = PWM_MAX_MOTORS_H - (PWM_MAX_MOTORS_H*DC_error*0.4);//++
+		 sp_pwm_l = PWM_MAX_MOTORS_H - (PWM_MAX_MOTORS_H*DC_error*0.2);//--
+	 }
+	
+	DC_MOTORS();
+	//PTA13_TEST_LOW;
+}
+
+/********************************************************************************
+						This function contains the different behavior
+						of the car.
+********************************************************************************/ 
+
+void DC_MOTORS(void)
+{
+	/*if((zeros_number >= min_zeros_track && zeros_number <= max_zeros_track) || (finish_flag == 1)) // stop the car with the camera
+		{
+			finish_flag = 1;
+			if(brake_delay > 80) stop_car();
+			brake_delay = brake_delay + 1;
+		}
+		else */
+	
+	diff_pwm_r = sp_pwm_r - right_tire_value;
+	diff_pwm_l = sp_pwm_l - left_tire_value;
+
+if(count_buttonA == 1)
+{
+	if(sampling_speed >= 50 || wait_next_sample >= 100)
+	{
+		if(diff_pwm_r >= 0 ) // right tire needs accel
+		{
+			pwm_r_accel = sp_pwm_r + diff_pwm_r;
+			DC_PWM_R = pwm_r_accel;
+		}
+		else if(diff_pwm_r < 0) // right tire needs brake
+		{
+			pwm_r_brake = 255 - (-1*diff_pwm_r);
+			DC_PWM_R_1 = sp_pwm_r + diff_pwm_r;
+		}
+	
+		if(diff_pwm_l >= 0 ) // left tire needs accel
+		{
+			pwm_l_accel = sp_pwm_l + diff_pwm_l;
+			DC_PWM_L = pwm_l_accel;		
+		}
+		else if(diff_pwm_l < 0) // left tire needs brake
+		{
+			pwm_l_brake = 255 - (-1*diff_pwm_l);
+			DC_PWM_L_1 = sp_pwm_l + diff_pwm_l;
+		}
+	}
+	wait_next_sample++;
+	if(wait_next_sample >=100) wait_next_sample = 50;
+	DC_MOTORS_SPEED();
+	reset_values();
+	
+}
+else if(count_buttonA == 0) stop_car();
+}
+
+
+/********************************************************************************
+						This function receives the final velocity 
+						parameters to control the tires of the car.
+********************************************************************************/ 
+
+void DC_MOTORS_SPEED(void)
+{
+	DC_PWM_L_1 = DC_PWM_L;
+	DC_PWM_R_1 = DC_PWM_R;
+	DC_PWM_R_2 = pwm_r_brake;
+	DC_PWM_L_2 = pwm_l_brake;
+	
+	
+	if (DC_PWM_R_1>255) DC_PWM_R_1 =255;
+	if (DC_PWM_L_1>255) DC_PWM_L_1 =255;
+	
+	//non-short circuit
+	if(DC_PWM_R_2 <= DC_PWM_R_1) DC_PWM_R_2=DC_PWM_R_1 + 2;
+	if(DC_PWM_R_2 > 255) DC_PWM_R_2=255;
+	if(DC_PWM_L_2 <= DC_PWM_L_1) DC_PWM_L_2=DC_PWM_L_1 + 2;
+	if(DC_PWM_L_2 > 255) DC_PWM_L_2=255;
+	
+	MOTOR1_R_SPEED(DC_PWM_R_1);
+	MOTOR1_L_SPEED(DC_PWM_L_1);
+
+	MOTOR2_R_SPEED(DC_PWM_R_2);
+	MOTOR2_L_SPEED(DC_PWM_L_2);
+	
+	pwm_r_brake = 255;
+	pwm_l_brake = 255;
+}
+
+/********************************************************************************
+						This function contains the different velocities
+						of the car.
+********************************************************************************/ 
+
+void DC_DP_parameters(void)
+{
+        switch ((DIP_SW_VAL() & 0xC) >> 2) 
+        {
+                case 0:
+                    LEDS_VEL_STATE_0;
+                    PWM_MAX_MOTORS_H =70;                                                             
+                    break;                                  
+                       
+                case 1:
+                	LEDS_VEL_STATE_1;
+                	PWM_MAX_MOTORS_H =(80);                                                             
+                	break;                         
+                case 2:
+                	LEDS_VEL_STATE_2;
+                	PWM_MAX_MOTORS_H =(90);                                                             
+                	break;                        
+                case 3:
+                	LEDS_VEL_STATE_3;
+                	PWM_MAX_MOTORS_H =(100);                                                             
+                	break;                      
+                default:
+                	break;
+        }
+ }
+
+/********************************************************************************
+						HEROE
+********************************************************************************/ 
+void stop_car(void)
+{
+	MOTOR1_R_SPEED(MOTORS1_MIN_SPEED);
+	MOTOR1_L_SPEED(MOTORS1_MIN_SPEED);
+
+	MOTOR2_R_SPEED(MOTORS2_MIN_SPEED);
+	MOTOR2_L_SPEED(MOTORS2_MIN_SPEED);	
+}
+/********************************************************************************
+						HEROE
+********************************************************************************/ 
+
+void reset_values(void)
+{
+	if(sampling_speed >=50)
+	{
+		right_tire_pulses = 0;
+		left_tire_pulses = 0;
+		sampling_speed = 0;
+	}
+}
+

@@ -1,0 +1,201 @@
+/********************************************************************************
+						Definitions uses to the dc motors control
+********************************************************************************/ 
+#define ERROR_MAX	 			(0.3)			// biggest error in the control
+#define ERROR_MIN	 			(-0.3)			// smallest error in the control 
+#define MOTORS1_MIN_SPEED		(0)
+#define MOTORS2_MIN_SPEED		(255)
+
+#define min_zeros_track			(38)
+#define max_zeros_track			(50)
+
+//#define PWM_MAX_MOTORS_H		(30)
+#define gain_dc_motor_Kp_right	(50)
+#define gain_dc_motor_Kp_left	(120)
+/********************************************************************************
+						Variables uses to the dc motors control
+********************************************************************************/ 
+float  DC_error; // error value for the control
+unsigned int DC_PWM_R_1, //Values for the right and left dc motors.
+			 DC_PWM_L_1,
+			 DC_PWM_R_2=255, 
+			 DC_PWM_L_2=255,
+			 PWM_MAX_MOTORS_H;
+
+unsigned int sp_pwm_r,
+			 sp_pwm_l,
+			 pwm_acc_r,
+			 pwm_acc_l,
+			 pwm_brake_r=255,
+			 pwm_brake_l=255,
+             finish_flag = 0,
+             brake_delay = 0,
+             wait_next_sample = 50;
+
+int diff_pwm_r,
+	diff_pwm_l;
+/********************************************************************************
+						This function has the algorithm control to
+						control the dc motors.
+********************************************************************************/ 
+void DC_MOTORS_CONTROL(void)
+{
+	DC_DP_parameters();
+	PUSH_BUTTON_TASK();
+	DC_error=0;
+	if(DC_error > ERROR_MAX)      DC_error = ERROR_MAX;
+	else if(DC_error < ERROR_MIN) DC_error = ERROR_MIN;
+	
+	 if(DC_error <= 0)   //spin to right
+	 {
+		 sp_pwm_r = PWM_MAX_MOTORS_H - (DC_error * (gain_dc_motor_Kp_right));
+	     sp_pwm_l = PWM_MAX_MOTORS_H - (DC_error * (gain_dc_motor_Kp_left));
+	 }
+	 else                //spin to left
+	 {
+		 sp_pwm_r = PWM_MAX_MOTORS_H - ((DC_error*(-1.0)) * (gain_dc_motor_Kp_left));
+	     sp_pwm_l = PWM_MAX_MOTORS_H - ((DC_error*(-1.0)) * (gain_dc_motor_Kp_right));
+	 }
+	
+	DC_MOTORS();
+	//PTA13_TEST_LOW;
+}
+
+/********************************************************************************
+						This function receives the final velocity 
+						parameters to control the tires of the car.
+********************************************************************************/ 
+
+void DC_MOTORS_SPEED(void)
+{
+	if (DC_PWM_R_1>255) DC_PWM_R_1 = 255;
+	else if (DC_PWM_L_1>255) DC_PWM_L_1 = 255;
+	else if (DC_PWM_R_2>255) DC_PWM_R_2 = 255;
+	else if (DC_PWM_L_2>255) DC_PWM_L_2 = 255;
+	
+	// non-short circuit
+	if(DC_PWM_R_2 <= DC_PWM_R_1 + 2) DC_PWM_R_2 = DC_PWM_R_1 + 2;  
+	if(DC_PWM_L_2 <= DC_PWM_L_1 + 2) DC_PWM_L_2 = DC_PWM_L_1 + 2;
+	
+	//write PWMs
+	MOTOR1_R_SPEED(DC_PWM_R_1);
+	MOTOR1_L_SPEED(DC_PWM_L_1);
+	
+	MOTOR2_R_SPEED(DC_PWM_R_2);
+	MOTOR2_L_SPEED(DC_PWM_L_2);
+	
+	
+}
+
+/********************************************************************************
+						This function contains the different behavior
+						of the car.
+********************************************************************************/ 
+
+void DC_MOTORS(void)
+{
+	/*if((zeros_number >= min_zeros_track && zeros_number <= max_zeros_track) || (finish_flag == 1)) // stop the car with the camera
+		{
+			finish_flag = 1;
+			if(brake_delay > 80) stop_car();
+			brake_delay = brake_delay + 1;
+		}*/
+	if(count_buttonA == 1)
+	{
+		DC_PWM_R_1 = sp_pwm_r;
+		DC_PWM_L_1 = sp_pwm_l;
+	
+		if(sampling_speed >= 50 || wait_next_sample <=100) // check the velocity wheels
+		{
+			diff_pwm_r = sp_pwm_r - right_tire_value; 
+			diff_pwm_l = sp_pwm_l - left_tire_value;
+		
+		if(diff_pwm_r >= 0) //right wheel needs speed up
+		{
+			pwm_acc_r = sp_pwm_r + diff_pwm_r;
+			DC_PWM_R_1 = pwm_acc_r;
+		}
+		else if(diff_pwm_r < 0) // right wheel needs brake
+		{
+			pwm_brake_r = 255 - (-1*diff_pwm_r);
+			DC_PWM_R_2 = pwm_brake_r;
+		}
+		
+		if(diff_pwm_l >= 0) //left wheel needs speed up
+		{
+			pwm_acc_l = sp_pwm_l + diff_pwm_l;
+			DC_PWM_L_1 = pwm_acc_l;
+		}
+		else if(diff_pwm_l < 0) // left wheel needs brake
+		{
+			pwm_brake_l = 255 - (-1*diff_pwm_l);
+			DC_PWM_L_2 = pwm_brake_l;
+		}
+		reset_values();
+		wait_next_sample++;
+		if(wait_next_sample >= 100) wait_next_sample = 50;
+		}
+	DC_MOTORS_SPEED();
+	}
+	else if(count_buttonA == 0) stop_car();
+		
+	
+}
+
+/********************************************************************************
+						This function contains the different velocities
+						of the car.
+********************************************************************************/ 
+
+void DC_DP_parameters(void)
+{
+        switch ((DIP_SW_VAL() & 0xC) >> 2) 
+        {
+                case 0:
+                	LEDS_VEL_STATE_0;
+                	PWM_MAX_MOTORS_H = 50;
+                    break;
+                        
+                case 1: 
+                     LEDS_VEL_STATE_1;
+                     PWM_MAX_MOTORS_H = 100;
+                     break;
+                        
+                case 2:
+                     LEDS_VEL_STATE_2;
+                     PWM_MAX_MOTORS_H = 120;
+                     break;
+        
+                case 3:
+                     LEDS_VEL_STATE_3;
+                     PWM_MAX_MOTORS_H = 150;
+                     break;
+                default:
+                     break;
+        }
+       
+}
+
+/********************************************************************************
+						stop the car completely
+********************************************************************************/ 
+void stop_car(void)
+{
+	MOTOR1_R_SPEED(MOTORS1_MIN_SPEED);	
+	MOTOR2_R_SPEED(MOTORS2_MIN_SPEED);
+	MOTOR1_L_SPEED(MOTORS1_MIN_SPEED);
+	MOTOR2_L_SPEED(MOTORS2_MIN_SPEED);
+}
+/********************************************************************************
+						reset values on speed sensors to new sampling
+********************************************************************************/ 
+void reset_values(void)
+{
+	if(sampling_speed >= 50)
+	{
+		right_tire_pulses = 0;
+		left_tire_pulses = 0;
+		sampling_speed = 0;
+	}
+}
+

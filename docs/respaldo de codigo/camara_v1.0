@@ -1,0 +1,280 @@
+#include "LineScanCamera.h"
+
+/********************************************************************************
+						Definitions used in the camera process
+********************************************************************************/ 
+
+#define taos_pixel_max   		(113) 		// 	number biggest the pixel is consider in the camera`
+#define taos_pixel_min	 		(15)  		// 	number smallest the pixel is consider in the camera`
+#define setpoint_camera  		(64)  		// 	number of the pixel that is used like reference to obtain the error.
+#define Threshold 		 		(15)  		// 
+#define range_smallests_values  (120)		// 
+#define Calib_const				(0.7) 	    //	0 -> 1
+/********************************************************************************
+						Variables used in the camera process
+********************************************************************************/ 
+
+volatile unsigned int count_pixel,
+					  count_pixel2, 
+					  count_zeros = 0,
+					  zeros_on_track = 0,
+					  first_zero,
+					  zeros_number = 0,
+					  calibration_to_zeros,
+					  Dig_val_ant,
+					  Dig_val,
+					  count_edges;
+static unsigned int taos_read_value[128]; // analog values of the each pixel of the camera
+static int taos_digital_value[128]; // analog values of the camera converted in digital values
+
+static unsigned int edge;  // variables used to detected a black line
+
+static unsigned int taos_calibration,  // variables used to calibrated the camera
+					smallest_min_val_read,
+					min_val_read,
+					min_val_read2,
+					max_val_read,
+					taos_adc_high_level;
+					
+volatile unsigned int final = 0,
+					  leds_camera,
+					  sampling_speed; 
+
+volatile float  error;
+
+/********************************************************************************
+						Principal state machine that include all process 
+						to generated Taos signals, getting date and image 
+						process
+********************************************************************************/ 
+void TAOS_CLK_SI_SIGNALS (void) //state machine for generate the CLK and SI TAOS signals.
+{
+	static unsigned short quarter_period_count = 0; // 1/4 of the CLK and SI peroid signals for each case.
+	static unsigned short count_CLK_pulse = 0;
+switch(quarter_period_count)
+	{
+	case 0:
+		//PTA12_TEST_HIGH;
+		taos_adc_high_level = POT1_ADC_VALUE();
+		CAMERA_SI_LOW;
+		CAMERA_CLK_LOW;
+		quarter_period_count = 1;
+		sampling_speed++;
+		break;
+	case 1:
+		CAMERA_SI_HIGH;
+		CAMERA_CLK_LOW;
+		leds_camera = POT2_ADC_VALUE() * 7.32;
+		quarter_period_count = 2;
+		break;
+	case 2:
+		CAMERA_SI_HIGH;
+		CAMERA_CLK_HIGH;
+		LEDS_CAMERA_VALUE(leds_camera);
+		quarter_period_count = 3;
+		break;
+	case 3:
+		CAMERA_SI_LOW;
+		CAMERA_CLK_HIGH;
+		quarter_period_count = 4;
+		break;
+	case 4:
+		CAMERA_SI_LOW;
+		CAMERA_CLK_LOW;
+		quarter_period_count = 5;
+		count_pixel = 0;
+		break;
+	default:
+			if(quarter_period_count <= (256+4))
+			{
+				switch(count_CLK_pulse)
+				{
+				case 0:
+					CAMERA_CLK_HIGH;
+					TAOS_CAPTURE_DATA(); 
+					TAOS_IMAGE_PROCESS();
+					quarter_period_count++;
+					count_CLK_pulse = 1;
+					count_pixel =count_pixel + 1;
+					if(count_pixel >= 128) count_pixel = 128;
+					break;
+				case 1:
+					CAMERA_CLK_LOW;
+					quarter_period_count++;
+					count_CLK_pulse = 0;
+					SPEED_SENSORS_TASK();
+					break;
+				}
+			}
+			else quarter_period_count=0;
+	}
+}
+
+/********************************************************************************
+						Function that is used to auto calibrate the camera
+						to detect the way edges and the camera digit.
+********************************************************************************/ 
+
+void TAOS_CAPTURE_DATA (void) 
+{	
+	
+	taos_read_value[count_pixel] = ADC0_READ_CAMERA(PTD5);// read the pixels values of the camera and convert to digital values
+	
+	if(count_pixel == taos_pixel_max)		//
+	 {
+		    max_val_read=0;
+		 	min_val_read=1025;
+		 	for(count_pixel2 = taos_pixel_min; count_pixel2 <=taos_pixel_max; count_pixel2++)
+		 	{
+		 		if(max_val_read<taos_read_value[count_pixel2]) max_val_read = taos_read_value[count_pixel2];
+		 		if(min_val_read>taos_read_value[count_pixel2])
+		 		{
+		 			//edge = count_pixel2; //detects the smallest value without noise delete
+		 			min_val_read = taos_read_value[count_pixel2];
+		 		}
+		 	}
+		 	taos_calibration = ((max_val_read -  min_val_read)*Calib_const) + min_val_read;  //
+		 	if(taos_calibration >= taos_adc_high_level)  taos_calibration = taos_adc_high_level; ///
+		 	calibration_to_zeros = ((max_val_read -  min_val_read)*Calib_const) + min_val_read;
+		 	
+	 }
+	if(taos_read_value[count_pixel] >= taos_calibration) taos_digital_value[count_pixel] = 1; //
+	else taos_digital_value[count_pixel] = -1; 
+}
+
+/********************************************************************************
+						Principal function to camera image processing and
+						obtain the error used to servo and dc motors control
+********************************************************************************/ 
+
+void TAOS_IMAGE_PROCESS (void)
+{ 
+	if(count_pixel == taos_pixel_max) 
+    {
+		 edge_first_smallest();	
+        //edge_detection();
+		//if ((E_ant < 0.3)&&(E_ant > -0.3)) zeros_number = search_finish_line();
+		//else zeros_number = 0;
+		
+		if(edge <= taos_pixel_min || edge >= taos_pixel_max ) error = E_ant;
+        else if(edge >= setpoint_camera) error = ((float)taos_pixel_max - (float)edge)*(-0.30/((float)taos_pixel_max-(float)setpoint_camera));
+        else  error = ((float)edge-Threshold)*(0.30 /((float)setpoint_camera-Threshold));
+        if(taos_calibration == taos_adc_high_level) error = E_ant;
+        if (smallest_min_val_read > taos_adc_high_level) error=E_ant;
+        //PTA12_TEST_LOW;
+   }	
+}
+
+/******************************************************************************
+* 					find the first smallest value with noise delete
+******************************************************************************/
+void edge_first_smallest(void)
+{
+	if(count_pixel == taos_pixel_max)
+	 {
+		 min_val_read = 1025;
+		 min_val_read2 = 1025;
+		 // 	  | ---->
+		 for(count_pixel2 = setpoint_camera; count_pixel2 <= taos_pixel_max; count_pixel2++)
+		 {
+			  if(min_val_read > taos_read_value[count_pixel2])
+			  {
+				min_val_read = taos_read_value[count_pixel2];
+			  }
+		 }
+		 //	<---- |
+		 for(count_pixel2 = setpoint_camera; count_pixel2 >= taos_pixel_min; count_pixel2--)
+		 {
+		 	  if(min_val_read2 > taos_read_value[count_pixel2])
+		 	  {
+		 		min_val_read2 = taos_read_value[count_pixel2];
+		 	  }
+		 }
+		 
+		 if (min_val_read > min_val_read2) smallest_min_val_read = min_val_read2;
+		 if (min_val_read < min_val_read2) smallest_min_val_read = min_val_read;
+		 
+		 if(E_ant <= -0.25)
+		 {
+			 for(count_pixel2 = taos_pixel_min; count_pixel2 <= taos_pixel_max; count_pixel2++)
+			 {
+				 if(taos_read_value[count_pixel2] < smallest_min_val_read + range_smallests_values &&
+					taos_read_value[count_pixel2] > smallest_min_val_read - range_smallests_values 	)	
+				 {
+					 if(count_zeros == 0)  edge = count_pixel2;
+				 	 count_zeros = count_zeros + 1;
+				 }  
+				 if(min_val_read > taos_read_value[count_pixel2])
+				 {
+					 min_val_read = taos_read_value[count_pixel2];
+				 }
+			 }
+		 }
+		 
+		 else if(E_ant >= 0.25)
+		 {
+			 for(count_pixel2 = taos_pixel_max; count_pixel2 >= taos_pixel_min; count_pixel2--)
+			 {
+				 if(taos_read_value[count_pixel2] < smallest_min_val_read + range_smallests_values &&
+					taos_read_value[count_pixel2] > smallest_min_val_read - range_smallests_values 	)	
+				 {
+					 if(count_zeros == 0)  edge = count_pixel2;
+					 count_zeros = count_zeros + 1;
+				 } 
+			 }
+		}
+		else
+		{
+			for(count_pixel2 = setpoint_camera; count_pixel2 <= taos_pixel_max; count_pixel2++)
+			{
+				if(taos_read_value[count_pixel2] < smallest_min_val_read + range_smallests_values &&
+				   taos_read_value[count_pixel2] > smallest_min_val_read - range_smallests_values 	)	
+		 	 	{
+					if(count_zeros == 0)  edge = count_pixel2;
+				 	count_zeros = count_zeros + 1;
+		 	 	}
+			}
+			for(count_pixel2 = setpoint_camera; count_pixel2 >= taos_pixel_min; count_pixel2--)
+			{
+				if(taos_read_value[count_pixel2] < smallest_min_val_read + range_smallests_values &&
+				   taos_read_value[count_pixel2] > smallest_min_val_read - range_smallests_values 	)	
+				{
+					if(count_zeros == 0)  edge = count_pixel2;
+			 		count_zeros = count_zeros + 1;
+				} 
+			}
+		 }
+		count_zeros = 0;
+		if (smallest_min_val_read > taos_adc_high_level) edge = taos_pixel_min;
+	 }
+}
+
+/******************************************************************************
+* 	Function to check the start/finish line | - - | (camera)
+******************************************************************************/
+
+unsigned int search_finish_line(void)
+{
+	 count_edges = 0;
+	 zeros_on_track = 0;
+	 Dig_val_ant = 1;
+	 Dig_val = 1;
+	 
+	 for(count_pixel2 = taos_pixel_min; count_pixel2 <=taos_pixel_max; count_pixel2++)
+	 {
+		 if(taos_read_value[count_pixel2] <= calibration_to_zeros) 
+	     {
+			 zeros_on_track = zeros_on_track + 1;
+	         Dig_val=0;
+	     }
+	     else Dig_val=1;
+	     if(Dig_val_ant != Dig_val) count_edges= count_edges+1;
+	     Dig_val_ant = Dig_val;
+	 }
+	 
+	 if((count_edges < 5)||(calibration_to_zeros>900)) zeros_on_track = 0;
+	 return zeros_on_track;
+}
+
+
+
