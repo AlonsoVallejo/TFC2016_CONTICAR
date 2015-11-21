@@ -45,6 +45,7 @@ typedef enum {
     /* Add here the IDs Tasks, order them same to Manager/Aplication main function list */
     TASK_INIT,
     TASK_SYSIN,
+    TASK_2TKS, 		/* task for LineScanCamera init  */
     TASK_524TKS,	/* task for image processing, servomotor and dc motors controller */
    // TASK_10TKS,	/* task forSpeed sensing */
    // TASK_50TKS,
