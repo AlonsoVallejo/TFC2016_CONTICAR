@@ -28,7 +28,9 @@
 /*============================================================================*/
 /*  REVISION |   DATE      |  AUTHOR  | Comment     						  */
 /*----------------------------------------------------------------------------*/
-/*                                               							  */
+//    1.0       20/10/2015    AVR		Create the state machine for LSC,even not tested.
+//    1.1       19/11/2015    AVR		added function to read the adc of Aout.
+//    1.2       21/11/2015    AVR		added functions for image processing (not tested).
 /*============================================================================*/
 /*============================================================================*/
 
@@ -55,11 +57,16 @@ typedef enum {
 	LSC_CLK_LOW,
 } LineScanCLKsignals;
 
+typedef enum{
+	MaxValueADC = 255U,
+	MinValueADC = 0U,
+}ADC_Range;
 typedef struct {
 	uint16_t quarter_period_count;
-    uint16_t count_CLK_pulse;
-	uint16_t count_pixel;
-	uint16_t adc_get_Aout[128U];
+	uint8_t  CLK_STATE;
+	uint8_t  count_pixel;
+	uint8_t  adc_get_Aout[128U];
+	int8_t   lsc_Aout_derivate[128U];
 } LineScanCamera;
 
 /*======================================================*/
@@ -69,7 +76,8 @@ typedef struct {
 /*======================================================*/
 /* Definition of RAM variables                          */
 /*======================================================*/
-
+extern int8_t sbyError;
+extern int8_t sbyErrorPrev;
 /*======================================================*/
 /* close variable declaration sections                  */
 /*======================================================*/
@@ -77,6 +85,7 @@ typedef struct {
 /* Exported functions prototypes and macros */
 /* ---------------------------------------- */
 void vfn_StateMachine_LSC_InSignals(void);
+
 /* Functions prototypes */
 
 /**************************************************************
