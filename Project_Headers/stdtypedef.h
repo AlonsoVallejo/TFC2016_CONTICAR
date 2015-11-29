@@ -34,7 +34,6 @@
 /* Register definitions for selected microcontroller */
 #include "derivative.h"
 
-
 /* Basic Scalar types */
 
 typedef unsigned char     T_UBYTE;

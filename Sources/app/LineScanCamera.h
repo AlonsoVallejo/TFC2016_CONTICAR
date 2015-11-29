@@ -61,6 +61,11 @@ typedef enum{
 	MaxValueADC = 255U,
 	MinValueADC = 0U,
 }ADC_Range;
+
+typedef enum{
+	MaxDerivativeValue = 255,
+	MinDerivativeValue = -255,		
+}DerivativeSignalRangeValues;
 typedef struct {
 	uint16_t quarter_period_count;
 	uint8_t  CLK_STATE;
@@ -72,6 +77,8 @@ typedef struct {
 /*======================================================*/
 /* Declaration of exported constants                    */
 /*======================================================*/
+#define ErrorMin						-100
+#define ErrorMax						100
 
 /*======================================================*/
 /* Definition of RAM variables                          */
@@ -85,7 +92,7 @@ extern int8_t sbyErrorPrev;
 /* Exported functions prototypes and macros */
 /* ---------------------------------------- */
 void vfn_StateMachine_LSC_InSignals(void);
-
+void vfn_LineScanCameraProcessing(void);
 /* Functions prototypes */
 
 /**************************************************************

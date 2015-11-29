@@ -62,6 +62,7 @@
 
 /* Exported functions prototypes and macros */
 /* ---------------------------------------- */
+void vfn_SteeringServoController(void);
 
 /* Functions prototypes */
 
