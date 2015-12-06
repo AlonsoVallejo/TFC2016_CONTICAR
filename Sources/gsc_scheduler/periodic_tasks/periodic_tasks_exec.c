@@ -68,8 +68,8 @@
  **************************************************************/
  void periodic_tasks_exec_524tks(void)
  {
-	vfn_LineScanCameraProcessing();
-	vfn_SteeringServoController();
+	 vfn_LineScanCameraProcessing();
+	 vfn_SteeringServoController();
  }
  
  /**************************************************************

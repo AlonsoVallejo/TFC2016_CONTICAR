@@ -31,6 +31,7 @@
 //    1.0       20/10/2015    AVR		Create the state machine for LSC,even not tested.
 //    1.1       19/11/2015    AVR		added function to read the adc of Aout.
 //    1.2       21/11/2015    AVR		added functions for image processing (not tested).
+//	  1.3	    05/12/2015     AVR		change the adc bits resolution.   
 /*============================================================================*/
 /*============================================================================*/
 
@@ -66,12 +67,17 @@ typedef enum{
 	MaxDerivativeValue = 255,
 	MinDerivativeValue = -255,		
 }DerivativeSignalRangeValues;
+
+typedef enum {
+	NO_LINE_DETECTED,
+}NoLineDetected;
+
 typedef struct {
 	uint16_t quarter_period_count;
 	uint8_t  CLK_STATE;
 	uint8_t  count_pixel;
-	uint8_t  adc_get_Aout[128U];
-	int8_t   lsc_Aout_derivate[128U];
+	uint16_t  adc_get_Aout[128U];
+	int16_t   lsc_Aout_derivate[128U];
 } LineScanCamera;
 
 /*======================================================*/

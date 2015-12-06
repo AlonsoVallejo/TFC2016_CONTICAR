@@ -22,8 +22,9 @@
 /*============================================================================*/
 /*  REVISION |   DATE      |  AUTHOR  | Comment     						  */
 /*----------------------------------------------------------------------------*/
-/*    1.0	    18/10/2015     AVR		add the init functions for adc.
- * 	  1.1	    20/10/2015     AVR		add functions to read the pots and IFB.                                             							  */
+//    1.0	    18/10/2015     AVR		add the init functions for adc.
+// 	  1.1	    20/10/2015     AVR		add functions to read the pots and IFB. 
+// 	  1.2	    05/12/2015     AVR		change the adc bits resolution.                                              							  */
 /*============================================================================*/       
 /*============================================================================*/
 
@@ -93,14 +94,14 @@ typedef enum
 
 /* Inline functions */
 /* ---------------- */
-void vfn_init_adc0 (void)							;
-volatile uint8_t u8_adc0_readAoutCamera0(void) 		;
-volatile uint8_t u8_adc0_readAoutCamera1(void) 		;
-volatile uint8_t u8_adc0_readPOT1_shield(void)		;
-volatile uint8_t u8_adc0_readPOT2_shield(void)		;
-volatile uint8_t u8_adc0_readBatteryVoltage(void)	;
-volatile uint8_t u8_adc0_read_HB_AIFB(void)			;
-volatile uint8_t u8_adc0_read_HB_BIFB(void)			;
+void vfn_init_adc0 (void)								;
+volatile uint16_t u10_adc0_readAoutCamera0(void) 		;
+volatile uint16_t u10_adc0_readAoutCamera1(void) 		;
+volatile uint16_t u10_adc0_readPOT1_shield(void)		;
+volatile uint16_t u10_adc0_readPOT2_shield(void)		;
+volatile uint16_t u10_adc0_readBatteryVoltage(void)		;
+volatile uint16_t u10_adc0_read_HB_AIFB(void)			;
+volatile uint16_t u10_adc0_read_HB_BIFB(void)			;
 /**************************************************************
  *  Name                 : void vfn_init_adc0 (void)
  *  Description          : Init the ADC0 peripherals
@@ -111,20 +112,20 @@ volatile uint8_t u8_adc0_read_HB_BIFB(void)			;
 void vfn_init_adc0 (void)
 {
 	SIM_SCGC6 |= SIM_SCGC6_ADC0_MASK;	// enable the ADC0 port.
-	ADC0_CFG1 |= ADC_CFG1_MODE( Eight_bits ) | ADC_CFG1_ADIV(0U); // ADC set of bits to a certain value and dividing the frequency conversion
+	ADC0_CFG1 |= ADC_CFG1_MODE( Ten_bits ) | ADC_CFG1_ADIV(0U); // ADC set of bits to a certain value and dividing the frequency conversion
 	ADC0_CFG2 |= ADC_CFG2_ADHSC_MASK; // High speed conversion.
 	ADC0_CFG2 |= ADC_CFG2_ADLSTS_MASK; // 2 extra ASDCK cycles
 	ADC0_SC1A  = ADC_SC1_ADCH(31);
 }
 
 /**************************************************************
- *  Name                 : void u8_adc0_readAoutCamera0(void)
+ *  Name                 : void u10_adc0_readAoutCamera0(void)
  *  Description          : function to read the LSC Aout in PTD5
  *  Parameters           : void
- *  Return               : conversion value result of LSC (0-255)
+ *  Return               : conversion value result of LSC
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t u8_adc0_readAoutCamera0(void)
+volatile uint16_t u10_adc0_readAoutCamera0(void)
 {
 	ADC0_CFG2 |= ADC_CFG2_MUXSEL_MASK; // select channel B ADxxB
 	ADC0_SC1A  = ADC_SC1_ADCH(TFC_LINESCAN0_ADC_CHANNEL); // select the  reading port.
@@ -136,13 +137,13 @@ volatile uint8_t u8_adc0_readAoutCamera0(void)
 }
 
 /**************************************************************
- *  Name                 : void u8_adc0_readAoutCamera1(void)
+ *  Name                 : void u10_adc0_readAoutCamera1(void)
  *  Description          : function to read the LSC Aout in PTD6
  *  Parameters           : void
- *  Return               : conversion value result of LSC (0-255)
+ *  Return               : conversion value result of LSC
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t u8_adc0_readAoutCamera1(void)
+volatile uint16_t u10_adc0_readAoutCamera1(void)
 {
 	ADC0_CFG2 |= ADC_CFG2_MUXSEL_MASK; // select channel B ADxxB
 	ADC0_SC1A  = ADC_SC1_ADCH(TFC_LINESCAN1_ADC_CHANNEL); // select the  reading port.
@@ -152,13 +153,12 @@ volatile uint8_t u8_adc0_readAoutCamera1(void)
 }
 
 /**************************************************************
- *  Name                 : void u8_adc0_readPOT2_shield(void)
+ *  Name                 : void u10_adc0_readPOT2_shield(void)
  *  Description          : function to read the potentiometer 1 Aout in PTB3
  *  Parameters           : void
- *  Return               : conversion value result of POT1 (0-255)
- *  Critical/explanation : No
+ *  Return               : conversion value result of POT1
  **************************************************************/
-volatile uint8_t u8_adc0_readPOT1_shield(void)
+volatile uint16_t u10_adc0_readPOT1_shield(void)
 {
 	ADC0_CFG2 |= ADC_CFG2_MUXSEL_SHIFT; // select channel A ADxxA
 	ADC0_SC1A  = ADC_SC1_ADCH(TFC_POT_1_ADC_CHANNEL); // select the  reading port.
@@ -168,13 +168,13 @@ volatile uint8_t u8_adc0_readPOT1_shield(void)
 }
 
 /**************************************************************
- *  Name                 : void u8_adc0_readPOT2_shield(void)
+ *  Name                 : void u10_adc0_readPOT2_shield(void)
  *  Description          : function to read the function to read the potentiometer 2 Aout in PTB2
  *  Parameters           : void
- *  Return               : conversion value result of POT2 (0-255)
+ *  Return               : conversion value result of POT2
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t u8_adc0_readPOT2_shield(void)
+volatile uint16_t u10_adc0_readPOT2_shield(void)
 {
 	ADC0_CFG2 |= ADC_CFG2_MUXSEL_SHIFT; // select channel A ADxxA
 	ADC0_SC1A  = ADC_SC1_ADCH(TFC_POT_2_ADC_CHANNEL); // select the  reading port.
@@ -184,13 +184,13 @@ volatile uint8_t u8_adc0_readPOT2_shield(void)
 }
 
 /**************************************************************
- *  Name                 : void u8_adc0_readBatteryVoltage(void)
+ *  Name                 : void u10_adc0_readBatteryVoltage(void)
  *  Description          : function to read the Battery voltage
  *  Parameters           : void
- *  Return               : conversion value result of voltage (0-255)
+ *  Return               : conversion value result of voltage
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t u8_adc0_readBatteryVoltage(void)
+volatile uint16_t u10_adc0_readBatteryVoltage(void)
 {
 	ADC0_CFG2 |= ADC_CFG2_MUXSEL_MASK; // select channel B ADxxB
 	ADC0_SC1A  = ADC_SC1_ADCH(TFC_BAT_SENSE_CHANNEL); // select the  reading port.
@@ -200,14 +200,14 @@ volatile uint8_t u8_adc0_readBatteryVoltage(void)
 }
 
 /**************************************************************
- *  Name                 : void u8_adc0_read_HB_AIFB(void)
+ *  Name                 : void u10_adc0_read_HB_AIFB(void)
  *  Description          : function to read the function to read 
  *  					   the feedback current of DC motor A 
  *  Parameters           : void
- *  Return               : conversion value result of POT2 (0-255)
+ *  Return               : conversion value result of POT2
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t u8_adc0_read_HB_AIFB(void)
+volatile uint16_t u10_adc0_read_HB_AIFB(void)
 {
 	ADC0_CFG2 |= ADC_CFG2_MUXSEL_SHIFT; // select channel A ADxxA
 	ADC0_SC1A  = ADC_SC1_ADCH(TFC_HBRIDGE_A_IFB_CHANNEL); // select the  reading port.
@@ -217,14 +217,14 @@ volatile uint8_t u8_adc0_read_HB_AIFB(void)
 }
 
 /**************************************************************
- *  Name                 : void u8_adc0_read_HB_BIFB(void)
+ *  Name                 : void u10_adc0_read_HB_BIFB(void)
  *  Description          : function to read the function to read 
  *  					   the feedback current of DC motor B
  *  Parameters           : void
- *  Return               : conversion value result of POT2 (0-255)
+ *  Return               : conversion value result of POT2 
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t u8_adc0_read_HB_BIFB(void)
+volatile uint16_t u10_adc0_read_HB_BIFB(void)
 {
 	ADC0_CFG2 |= ADC_CFG2_MUXSEL_SHIFT; // select channel A ADxxA
 	ADC0_SC1A  = ADC_SC1_ADCH(TFC_HBRIDGE_B_IFB_CHANNEL); // select the  reading port.

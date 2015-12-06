@@ -71,6 +71,17 @@ void vfn_SteeringServoController(void)
 	/*TODO: PID controller for the servo*/
 	
 	sbyServoPosition = sbyError;
+	
+	//Saturation control
+	if(sbyServoPosition > ErrorMax)
+	{
+		sbyServoPosition = ErrorMax;
+	}
+	if(sbyServoPosition < ErrorMin)
+	{
+		sbyServoPosition = ErrorMin;
+	}
+	
 	vfn_SetPosition_SteeringServo(sbyServoPosition);
 }
 /**************************************************************
@@ -82,16 +93,6 @@ void vfn_SteeringServoController(void)
  **************************************************************/
 void vfn_SetPosition_SteeringServo(int8_t i8position)
 {
-	//Saturation control
-	if(i8position > ErrorMax)
-	{
-		i8position = ErrorMax;
-	}
-	if(i8position < ErrorMin)
-	{
-		i8position = ErrorMin;
-	}
-	
 	//Set the right value to servo timer
 	SERVO_MOTOR_VALUE =((((i8position+100)/2)*(SERVO_MAX_DUTY_CYCLE - SERVO_MIN_DUTY_CYCLE))/100)+SERVO_MIN_DUTY_CYCLE;
 }

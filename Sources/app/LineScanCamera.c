@@ -24,7 +24,8 @@
 /*----------------------------------------------------------------------------*/
 //    1.0       20/10/2015    AVR		Create the state machine for LSC,even not tested.
 //    1.1       19/11/2015    AVR		added function to read the adc of Aout.
-//    1.2       21/11/2015    AVR		added functions for image processing and function to get the error(not tested)
+//    1.2       21/11/2015    AVR		added functions for image processing and function to get the error
+//	  1.3	    05/12/2015    AVR		change the adc bits resolution, filtering deriv. signal, add function map    
 /*============================================================================*/       
 /*============================================================================*/
 
@@ -38,8 +39,12 @@
 #define LSC_TotalPixels					128U
 #define TotalCLKrepetitions				260U
 #define CurrentPixel					linescancamera.count_pixel
-#define MinPixelLSCConsider				15U
-#define MaxPixelLSCConsider				118U
+#define MinPixelLSCConsider				40U		/* Min pixel number consider for control */
+#define MaxPixelLSCConsider				90U	    /* Max pixel number consider for control */
+#define MinPixelLSCConsiderDrtv			20U		/* Min pixel number consider for get the derivative signal*/
+#define MaxPixelLSCConsiderDrtv			100U	/* Max pixel number consider for get the derivative signal*/
+#define MinPixelLSCConsiderAout			0U
+#define MaxPixelLSCConsiderAout			128U
 #define CentralPixelLSC					64U
 
 /*Local Types*/
@@ -49,8 +54,8 @@ LineScanCamera linescancamera;
 /* Functions macros */
 #define StoreLSC_Aout(position)			 				linescancamera.adc_get_Aout[position]
 #define StoreDerivateAout(position)		 				linescancamera.lsc_Aout_derivate[position]
-#define ThresholdCrossingsRange(Reference,Min,Max) 		(Reference >= Min && Reference <= Max)
-  
+#define FilterDrtvSingal(Reference,Min,Max) 			(Reference >= Min && Reference <= Max)
+#define SeparationBetweenMaxMinDrtvPoint(Ref,Separ)		( Ref > Separ)
 /* Utility Functions*/
 
 /*==================================================*/ 
@@ -60,16 +65,17 @@ LineScanCamera linescancamera;
 /*======================================================*/ 
 /* Definition of RAM variables                          */
 /*======================================================*/ 
-uint8_t ubyTempLineScanCameraAoutValue; /* Variable only used for Freemaster debug */
-uint8_t ubyTempGetCurrentValueDerivativeAout; /* Variable only used for Freemaster debug */
+uint8_t ubyTempLineScanCameraAoutValue; 		/* Variable only used for Freemaster debug */
+uint16_t s16_TempGetCurrentValueDerivativeAout; /* Variable only used for Freemaster debug */
 
 /* RAM variables uses for image processing */
-uint8_t ubyStoreMaxValReadAdcAout; 
-uint8_t ubyStoreMinValReadAdcAout;
-uint8_t	ubyLineLocationPoint;
-int16_t s16StoreMaxValReadDertvSignal; 
-int16_t s16StoreMinValReadDertvSignal;
-int16_t sbyGetPromedyDerSignal;
+uint16_t  u16StoreMaxValReadAdcAout; 
+uint16_t  u16StoreMinValReadAdcAout;
+uint8_t	  ubyLineLocationPoint_MinValue;
+uint8_t	  ubyLineLocationPoint_MaxValue;
+int16_t   s16StoreMaxValReadDertvSignal; 
+int16_t   s16StoreMinValReadDertvSignal;
+int16_t   i16Differece_MinValDrtv_MaxValDrtv;
 
 /* RAM variables uses for Control algorithm of LSC */
 int8_t sbyError;
@@ -87,6 +93,7 @@ void vfn_ReadAout_LineScanCamera(void);
 void vfn_GetDerivateSingal_lscAout(void);
 int8_t s8_GetLineLocationValue_DerivateSignal(uint8_t MinPixelConsider, uint8_t MaxPixelConside);
 int8_t s8_GetLineLocationValue_AoutSignal(uint8_t MinPixelConsider, uint8_t MaxPixelConside);
+int16_t map(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max);
 
 /* Exported functions prototypes */
 /* ----------------------------- */
@@ -144,7 +151,10 @@ void vfn_StateMachine_LSC_InSignals(void) //state machine for generate the CLK a
 				vfn_ReadAout_LineScanCamera();
 				linescancamera.quarter_period_count++;
 				linescancamera.count_pixel = linescancamera.count_pixel + 1U;
-				if(CurrentPixel >= LSC_lastPixel) linescancamera.count_pixel = LSC_lastPixel;
+				if(CurrentPixel == LSC_lastPixel)
+				{
+					linescancamera.count_pixel = LSC_lastPixel;
+				}
 				linescancamera.CLK_STATE = LSC_CLK_LOW;
 				break;
 			case LSC_CLK_LOW:
@@ -167,8 +177,7 @@ void vfn_StateMachine_LSC_InSignals(void) //state machine for generate the CLK a
  **************************************************************/
 void vfn_ReadAout_LineScanCamera(void)
 {
-	StoreLSC_Aout(CurrentPixel) = u8_adc0_readAoutCamera0();
-	ubyTempLineScanCameraAoutValue = StoreLSC_Aout(CurrentPixel);
+	StoreLSC_Aout(CurrentPixel) = u10_adc0_readAoutCamera0();
 }
 
 /**************************************************************
@@ -184,26 +193,22 @@ void vfn_LineScanCameraProcessing(void)
 {
 	vfn_GetDerivateSingal_lscAout();
 	
-	//(void)s8_GetLineLocationValue_AoutSignal(MinPixelLSCConsider, MaxPixelLSCConsider);
-	(void)s8_GetLineLocationValue_DerivateSignal(MinPixelLSCConsider, MaxPixelLSCConsider);
+	(void)s8_GetLineLocationValue_DerivateSignal(MinPixelLSCConsiderDrtv, MaxPixelLSCConsiderDrtv);
 	
-	if(ubyLineLocationPoint <= MinPixelLSCConsider || ubyLineLocationPoint >= MaxPixelLSCConsider)
+	sbyErrorPrev = sbyError;
+	
+	if(ubyLineLocationPoint_MaxValue <= MinPixelLSCConsider || ubyLineLocationPoint_MaxValue >= MaxPixelLSCConsider)
 	{
 		sbyError = sbyErrorPrev;
 	}
-	else if(ubyLineLocationPoint >= CentralPixelLSC)
+	else if(ubyLineLocationPoint_MaxValue >= CentralPixelLSC) /* Left turn control algorithm */
 	{
-		sbyError = (MaxPixelLSCConsider - ubyLineLocationPoint) * (ErrorMin/(MaxPixelLSCConsider - CentralPixelLSC));
+		sbyError = map(ubyLineLocationPoint_MaxValue,65,90,-100,0); 
 	}
-	else
+	else /* Right turn control algorithm */
 	{
-		sbyError = (ubyLineLocationPoint - MinPixelLSCConsider) * (ErrorMax / (CentralPixelLSC - MinPixelLSCConsider));
+		sbyError = map(ubyLineLocationPoint_MaxValue,40,64,0,100);
 	}
-	
-	/*if(ThresholdCrossingsRange(sbyGetPromedyDerSignal,-1,1)) 
-	{
-		sbyError = sbyErrorPrev;
-	}*/
 }
 
 /**************************************************************
@@ -220,11 +225,17 @@ void vfn_GetDerivateSingal_lscAout(void)
 	for(ubytempCount = LSC_firstPixel;ubytempCount <= LSC_lastPixel;ubytempCount++)
 	{
 		StoreDerivateAout(ubytempCount) = linescancamera.adc_get_Aout[ubytempCount + 1U] - linescancamera.adc_get_Aout[ubytempCount - 1U];
-		ubyTempGetCurrentValueDerivativeAout = StoreDerivateAout(ubytempCount);
-		sbyGetPromedyDerSignal = sbyGetPromedyDerSignal + StoreDerivateAout(ubytempCount);
+		
+		/* Filtering process */
+		if( FilterDrtvSingal(StoreDerivateAout(ubytempCount),-5,5) )
+		{
+			StoreDerivateAout(ubytempCount) = 0;
+		}
+		if( ubytempCount < MinPixelLSCConsiderDrtv || ubytempCount > MaxPixelLSCConsiderDrtv)
+		{
+			StoreDerivateAout(ubytempCount) = 0;
+		}
 	}
-	
-	sbyGetPromedyDerSignal = sbyGetPromedyDerSignal / LSC_TotalPixels; /* Get the promedy of Derivative signal*/
 }
 
 /******************************************************************************************************************
@@ -239,19 +250,20 @@ void vfn_GetDerivateSingal_lscAout(void)
 int8_t s8_GetLineLocationValue_AoutSignal(uint8_t MinPixelConsider, uint8_t MaxPixelConsider)
 {
 	uint8_t ubytempCount;
-	ubyStoreMaxValReadAdcAout = MinValueADC;
-	ubyStoreMinValReadAdcAout = MaxValueADC;
+	u16StoreMaxValReadAdcAout = MinValueADC;
+	u16StoreMinValReadAdcAout = MaxValueADC;
 	
 	for(ubytempCount = MinPixelConsider;ubytempCount <= MaxPixelConsider;ubytempCount++)
 	{
-		if(ubyStoreMaxValReadAdcAout < StoreLSC_Aout(ubytempCount)) 
+		if(u16StoreMaxValReadAdcAout < StoreLSC_Aout(ubytempCount)) 
 		{
-			ubyStoreMaxValReadAdcAout = StoreLSC_Aout(ubytempCount);
+			u16StoreMaxValReadAdcAout = StoreLSC_Aout(ubytempCount);
+			ubyLineLocationPoint_MaxValue = ubytempCount;
 		}
-		else if(ubyStoreMinValReadAdcAout > StoreLSC_Aout(ubytempCount))
+		else if(u16StoreMinValReadAdcAout > StoreLSC_Aout(ubytempCount))
 		{
-			ubyStoreMinValReadAdcAout = StoreLSC_Aout(ubytempCount);
-			ubyLineLocationPoint = ubytempCount;
+			u16StoreMinValReadAdcAout = StoreLSC_Aout(ubytempCount);
+			ubyLineLocationPoint_MinValue = ubytempCount;
 		}
 	}
 }
@@ -277,12 +289,30 @@ int8_t s8_GetLineLocationValue_DerivateSignal(uint8_t MinPixelConsiderDer, uint8
 		if(s16StoreMaxValReadDertvSignal < StoreDerivateAout(ubytempCount)) 
 		{
 			s16StoreMaxValReadDertvSignal = StoreDerivateAout(ubytempCount);
+			ubyLineLocationPoint_MaxValue = ubytempCount;
 		}
 		else if(s16StoreMinValReadDertvSignal > StoreDerivateAout(ubytempCount))
 		{
 			s16StoreMinValReadDertvSignal = StoreDerivateAout(ubytempCount);
-			ubyLineLocationPoint = ubytempCount;
+			ubyLineLocationPoint_MinValue = ubytempCount;
 		}
+	}
+	
+	i16Differece_MinValDrtv_MaxValDrtv = ubyLineLocationPoint_MaxValue - ubyLineLocationPoint_MinValue;
+	if( SeparationBetweenMaxMinDrtvPoint(i16Differece_MinValDrtv_MaxValDrtv,10) ) 
+	{
+		ubyLineLocationPoint_MaxValue = NO_LINE_DETECTED;
 	}
 }
 
+/**********************************************************************************************************
+ *  Name                 : map(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max)
+ *  Description          : map values
+ *  Parameters           : void
+ *  Return               : void
+ *  Critical/explanation : No
+ **********************************************************************************************************/
+int16_t map(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max)
+{
+  return (x - in_min) * (out_max - out_min + 1) / (in_max - in_min + 1) + out_min;
+}
