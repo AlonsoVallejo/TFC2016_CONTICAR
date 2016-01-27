@@ -3,6 +3,24 @@
 #include "mcl\ARM_SysTick.h"
 #include "gsc_scheduler\gsc_sch_core\gsc_sch_core_intf.h"
 
+/************************************************************************************                                                                                 
+             .                                                          :           
+       .;;;;;;`             ;;;                                ;;;     ;;`          
+      ;;;;:``:;`         ;. ;;;                       .;        ;;     `;`          
+     ;;;;  `,` :        ;;.                          ;;;        ;;  ;;;;;           
+    .;;; `;;:;; ;;;;;;`;;;;`;;;`;;:;;;  ;;;;`:;;:;;:`;;;;`;;;;  ;;   ;.;;;          
+    ;;;. ;;: ;;` ;;`;;; ;;. ;;; ;;;`;; ;;;`;; ;;:,;; ;;; ;``;;: ;;   ; :;;;`        
+    ;;;  ;;, ;;; ;; ;;; ;;. ;;; ;;; ;; ;;: ;; ;;.`;; ;;;  `,;;; ;;      `;;:.       
+    ;;; `;;. ;;; ;; ;;; ;;. ;;; ;;; ;; ;;;;;; ;;.`;; ;;; ;;;;;; ;;       ;;`;       
+    ;;;  ;;, ;;; ;; ;;; ;;. ;;; ;;; ;; ;;;    ;;.`;; ;;; ;; ;;; ;;       ;;`;       
+    ;;;, ;;: ;;` ;; ;;; ;;. ;;; ;;; ;; :;;:,; ;;.`;; ;;; ;;,;;; ;;      ;,:         
+    `;;; `;;;;, ;;;;;;;::;;`;;;`;;; ;;; ;;;;`;;;;`;;;`;;;;;;;;;`;;; ;;;;;;;;;;      
+     ;;;;     `;                                                                    
+      ;;;;;,:;;                                                                     
+       `;;;;;,                                                                      
+************************************************************************************/                                                                                    
+                                                                                    
+                 
 volatile unsigned int sys_tick_counter = 0;
 
 void WatchDog_cfg(void);
@@ -17,7 +35,7 @@ int main (void)
 	/* initialize clock system for 48 MHz */
 	InitClock(); 
 	/* Configure the timer and the interrupt to be used to generate the tick of the scheduler */
-	InitSysTick(15);
+	InitSysTick(2);
 	/* Scheduler Initialization and tasks initialization  */
 	gsc_sch_core_Init();
 	/* Execute Scheduler */

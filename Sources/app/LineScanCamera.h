@@ -31,7 +31,7 @@
 //    1.0       20/10/2015    AVR		Create the state machine for LSC,even not tested.
 //    1.1       19/11/2015    AVR		added function to read the adc of Aout.
 //    1.2       21/11/2015    AVR		added functions for image processing (not tested).
-//	  1.3	    05/12/2015     AVR		change the adc bits resolution.   
+//	  1.3	    05/12/2015    AVR		change the adc bits resolution.   
 /*============================================================================*/
 /*============================================================================*/
 
@@ -46,11 +46,12 @@
 
 /* Types definition */
 typedef enum {
-	START_SILOW_CLKLOW,
+	START_SYNC_SIGNALS,
 	SIHIGH_CLKLOW,
 	SIHIGH_CLKHIGH,
 	SILOW_CLKHIGH,
-	FINISH_SILOW_CLKLOW,
+	SILOW_CLKLOW,
+	FINISH_SYNC_SIGNALS
 } LineScanSyscSignals;
 
 typedef enum {
@@ -59,18 +60,19 @@ typedef enum {
 } LineScanCLKsignals;
 
 typedef enum{
-	MaxValueADC = 255U,
+	MaxValueADC = 1024U,
 	MinValueADC = 0U,
 }ADC_Range;
 
 typedef enum{
-	MaxDerivativeValue = 255,
-	MinDerivativeValue = -255,		
+	MaxDerivativeValue = 1024,
+	MinDerivativeValue = -1024,		
 }DerivativeSignalRangeValues;
 
 typedef enum {
 	NO_LINE_DETECTED,
 }NoLineDetected;
+
 
 typedef struct {
 	uint16_t quarter_period_count;
@@ -85,7 +87,7 @@ typedef struct {
 /*======================================================*/
 #define ErrorMin						-100
 #define ErrorMax						100
-
+#define	NoError							0
 /*======================================================*/
 /* Definition of RAM variables                          */
 /*======================================================*/

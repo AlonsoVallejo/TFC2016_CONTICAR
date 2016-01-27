@@ -63,12 +63,12 @@
 
 /* Exported functions prototypes and macros */
 /* ---------------------------------------- */
-void vfn_init_adc0 (void)							;
+void vfn_init_adc0 (void)								;
 volatile uint16_t u10_adc0_readAoutCamera0(void) 		;
 volatile uint16_t u10_adc0_readAoutCamera1(void) 		;
 volatile uint16_t u10_adc0_readPOT1_shield(void)		;
 volatile uint16_t u10_adc0_readPOT2_shield(void)		;
-volatile uint16_t u10_adc0_readBatteryVoltage(void)	;
+volatile uint16_t u10_adc0_readBatteryVoltage(void)		;
 volatile uint16_t u10_adc0_read_HB_AIFB(void)			;
 volatile uint16_t u10_adc0_read_HB_BIFB(void)			;
 
