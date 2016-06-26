@@ -3,10 +3,10 @@
 /*============================================================================*/
 /*                        OBJECT SPECIFICATION                                */
 /*============================================================================*
-* C Source:        Servo_Motor.c
+* C Source:        PushButtons.c
 * version:         1.0 
 * created_by:      AVR
-* date_created:    Nov 20, 2015
+* date_created:    Jun 25, 2016
 *=============================================================================*/
 /* DESCRIPTION :                                                              */
 /*============================================================================*/
@@ -16,20 +16,32 @@
 /*============================================================================*/
 /*  REVISION |   DATE      |  AUTHOR  | Comment     						  */
 /*----------------------------------------------------------------------------*/
-//   1.0       20/10/2015    AVR		First revision.
-//	 1.1       21/10/2015    AVR		Test the servo, function good.
-//	 1.2       07/12/2015    AVR		Add functions to improve the servo stering.
-//   1.3	   25/06/2016	 AVR		implement functions for use the push button to center the servo
+//	  1.0	 	18/06/2016		AVR		first Version
 /*============================================================================*/       
 /*============================================================================*/
 
 /* Includes */
 /* -------- */
-#include "ServoMotor.h"
+
+#include "PushButtons.h"
+
 /* Functions macros, constants, types and datas         */
 /* Local Defines*/
 
 /*Local Types*/
+typedef enum
+{
+	buttonAisNotPressed,
+	buttonAisPressed,
+	buttonAwasPressed
+}StatesButtonA_TYPE;
+
+typedef enum
+{
+	buttonBisNotPressed,
+	buttonBisPressed,
+	buttonBwasPressed
+}StatesButtonB_TYPE;
 
 /* ---------------------------------------------------- */
 /* Functions macros */
@@ -41,73 +53,90 @@
 /*======================================================*/ 
 /* Definition of RAM variables                          */
 /*======================================================*/ 
-int8_t sbyServoPosition;
+uint8_t TempCountButtonA;
+uint8_t TempCountButtonB;
+/*======================================================*/ 
+/* close variable declaration sections                  */
+/*======================================================*/ 
+
+/* Private defines */
+
 
 /* Private functions prototypes */
 /* ---------------------------- */
-void vfn_SetPosition_SteeringServo(int8_t i8position);
+
+
 
 /* Exported functions prototypes */
 /* ----------------------------- */
-void vfn_SteeringServoController(void);
 
 /* Inline functions */
 /* ---------------- */
+void boolDcMotorStartCondition(void);
+void boolServoMotorRepose(void);
 
 /**************************************************************
- *  Name                 : vfn_SteeringServoController
- *  Description          : Function that contains the servo control 
+ *  Name                 : boolDcMotorStartCondition
+ *  Description          : indicates if dc motors cam be start
  *  Parameters           : void
  *  Return               : void
  *  Critical/explanation : No
  **************************************************************/
-void vfn_SteeringServoController(void)
+void boolDcMotorStartCondition(void)
 {
-	uint8_t ServoRepose;
-
-	boolServoMotorRepose();
+	static uint8_t StatePushButtonA;
+	static uint8_t ButtonAstate;
 	
-	ServoRepose = (ServoMotorIndStat_TYPE)TempCountButtonB;
+	StatePushButtonA = (StatesButtonA_TYPE)u8_PushButtonA_state();
 	
-	if((((sbyError - sbyErrorPrev) > ERROR_MAX) || ((sbyError - sbyErrorPrev) < ERROR_MIN))) 
+	if(StatePushButtonA == buttonAisPressed)
 	{
-		sbyError = sbyErrorPrev;
+		ButtonAstate = buttonAwasPressed;
 	}
-	
-	if(ServoRepose == ServoNotRepose)
+	if(StatePushButtonA == buttonAisNotPressed) 
 	{
-		sbyServoPosition = sbyError;
+		if(ButtonAstate == buttonAwasPressed)
+		{
+			ButtonAstate = buttonAisNotPressed;
+			TempCountButtonA = TempCountButtonA + 1;
+			if(TempCountButtonA == 2)
+			{
+				TempCountButtonA = 0;
+			}
+		}
 	}
-	
-	if(ServoRepose == ServoInRopose)
-	{
-		sbyServoPosition = NO_ERROR;
-	}
-	
-	//Saturation control
-	if(sbyServoPosition > ERROR_MAX)
-	{
-		sbyServoPosition = ERROR_MAX;
-	}
-	if(sbyServoPosition < ERROR_MIN)
-	{
-		sbyServoPosition = ERROR_MIN;
-	}
-	
-	vfn_SetPosition_SteeringServo(sbyServoPosition);
 }
+
 /**************************************************************
- *  Name                 : vfn_SetPosition_SteeringServo
- *  Description          : Set servo position 
- *  Parameters           : i8position, from -100 (max left) to +100 (max right)
+ *  Name                 : boolServoMotorRepose
+ *  Description          : Put the sevo motor in central position
+ *  					   by push button B request
+ *  Parameters           : void
  *  Return               : void
  *  Critical/explanation : No
  **************************************************************/
-void vfn_SetPosition_SteeringServo(int8_t i8position)
+void boolServoMotorRepose(void)
 {
-	//Set the right value to servo timer
-	SERVO_MOTOR_VALUE = ((((i8position+100)/2)*(SERVO_MAX_DUTY_CYCLE - SERVO_MIN_DUTY_CYCLE))/100)+SERVO_MIN_DUTY_CYCLE;
+	static uint8_t StatePushButtonB;
+	static uint8_t ButtonBstate;
+	
+	StatePushButtonB = (StatesButtonB_TYPE)u8_PushButtonB_state();
+	
+	if(StatePushButtonB == buttonBisPressed)
+	{
+		ButtonBstate = buttonBwasPressed;
+	}
+	if(StatePushButtonB == buttonBisNotPressed) 
+	{
+		if(ButtonBstate == buttonBwasPressed)
+		{
+			ButtonBstate = buttonBisNotPressed;
+			TempCountButtonB = TempCountButtonB + 1;
+			if(TempCountButtonB == 2)
+			{
+				TempCountButtonB = 0;
+			}
+		}
+	}
 }
-
-
 

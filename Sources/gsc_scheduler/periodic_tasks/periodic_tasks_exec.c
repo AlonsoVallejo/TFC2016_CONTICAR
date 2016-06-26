@@ -70,6 +70,7 @@
  {
 	 vfn_LineScanCameraProcessing();
 	 vfn_SteeringServoController();
+	 vfn_DCmotors_task();
  }
  
  /**************************************************************

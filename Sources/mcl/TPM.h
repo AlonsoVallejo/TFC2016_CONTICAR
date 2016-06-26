@@ -38,28 +38,30 @@
 /* -------- */
 #include "stdtypedef.h"
 #include "derivative.h"
-#include "CrystalClock.h"
+#include "../mcl/CrystalClock.h"
+#include "../mcl/GPIO.h"
+#include "../app/DCMotors.h"
 /* Exported types and constants */
 /* ---------------------------- */
 
 /* definition */
-#define TPM_PLLFLL 					1
-#define TPM_OSCERCLK 				2
-#define TPM_MCGIRCLK				3
+#define TPM_PLLFLL 					1U
+#define TPM_OSCERCLK 				2U
+#define TPM_MCGIRCLK				3U
 
-#define	TPM_CNT_DIS					0
-#define	TPM_CLK						1
-#define	TPM_EXT_CLK					2
+#define	TPM_CNT_DIS					0U
+#define	TPM_CLK						1U
+#define	TPM_EXT_CLK					2U
 
 /*preescaler definitions.*/
-#define PS_1						0
-#define PS_2						1
-#define PS_4						2
-#define PS_8						3
-#define PS_16						4
-#define PS_32						5
-#define PS_64						6
-#define PS_128						7
+#define PS_1						0U
+#define PS_2						1U
+#define PS_4						2U
+#define PS_8						3U
+#define PS_16						4U
+#define PS_32						5U
+#define PS_64						6U
+#define PS_128						7U
 
 /*confuralbles bits for the TPM modules.*/
 #define TPM_OC_TOGGLE				TPM_CnSC_MSA_MASK|TPM_CnSC_ELSA_MASK
@@ -87,31 +89,22 @@
 #define MOTORA1_RIGHT_VALUE			TPM0_C2V /* PTC3 A1 */
 #define MOTORA2_RIGHT_VALUE			TPM0_C3V /* PTC4 A2 */
 
-#define STOP_MOTOR_H				0U
-#define STOP_MOTOR_L				255U
-
 #define TPM0_CLOCK					(CORE_CLOCK/2)
-#define TPM0_CLK_PRESCALE           (0U)  			// Prescale Selector value
-#define TPM0_OVERFLOW_FREQUENCY 	(3000U) 		//Desired Frequency of PWM Signal 
+#define TPM0_CLK_PRESCALE           (0)  			// Prescale Selector value
+#define TPM0_OVERFLOW_FREQUENCY 	(8000U) 		//Desired Frequency of PWM Signal 
 #define TPM0_MODULE					(TPM0_CLOCK/(1<<TPM0_CLK_PRESCALE)/TPM0_OVERFLOW_FREQUENCY)
 #define TPM0_PWM_UNIT				(TPM0_MODULE/200U)
 
-#define TPM1_CLOCK					(48000000/2)	//48000000/2
+#define TPM1_CLOCK					(24000000U)	//48000000/2
 #define TPM1_CLK_PRESCALE			(6U) 			//divide by 64
 #define TPM1_OVERFLOW_FREQUENCY 	(50U)			//Desired Frequency of PWM Signal - Here 50Hz => 20ms period 
 
-#define SERVO_MIN_DUTY_CYCLE		(SERVO_MIN_us*(TPM1_CLOCK/(1<<TPM1_CLK_PRESCALE)))/1000000
-#define SERVO_MAX_DUTY_CYCLE		(SERVO_MAX_us*(TPM1_CLOCK/(1<<TPM1_CLK_PRESCALE)))/1000000
+#define SERVO_MIN_DUTY_CYCLE		(SERVO_MIN_us*(TPM1_CLOCK/(1U<<TPM1_CLK_PRESCALE)))/1000000U
+#define SERVO_MAX_DUTY_CYCLE		(SERVO_MAX_us*(TPM1_CLOCK/(1U<<TPM1_CLK_PRESCALE)))/1000000U
 
 //Modify these numbers to set the servo limits
 #define SERVO_MIN_us				(1100U)
 #define SERVO_MAX_us				(1900U)
-
-// H-Bridge management
-#define HBRIDGE_EN_LOC				(uint32_t)(1<<21)
-#define HBRIDGE_ENABLE				GPIOE_PSOR = HBRIDGE_EN_LOC	
-#define HBRIDGE_DISABLE				GPIOE_PCOR = HBRIDGE_EN_LOC	
-
 
 /*======================================================*/ 
 /* Declaration of exported constants                    */
@@ -132,9 +125,6 @@
 /* ---------------------------------------- */
 void vfn_Init_SteeringServo_PTB0(void);
 void vfn_Init_DCmotors(void);
-void vfn_Set_RightMotors_PWM(uint8_t u8MotorA1pwm, uint8_t u8MotorA2pwm);
-void vfn_Set_LeftMotors_PWM(uint8_t u8MotorB1pwm, uint8_t u8MotorB2pwm);
-
 /* Functions prototypes */
 
 /**************************************************************

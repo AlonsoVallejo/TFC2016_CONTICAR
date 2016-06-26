@@ -48,7 +48,6 @@
 /*======================================================*/ 
 
 
-
 /*======================================================*/ 
 /* close variable declaration sections                  */
 /*======================================================*/ 
@@ -68,9 +67,6 @@
 /* ---------------- */
 void vfn_Init_SteeringServo_PTB0(void)									;
 void vfn_Init_DCmotors(void)											;
-void vfn_SetPosition_SteeringServo(int8_t i8position)					;
-void vfn_Set_RightMotors_PWM(uint8_t u8MotorA1pwm, uint8_t u8MotorA2pwm);
-void vfn_Set_LeftMotors_PWM(uint8_t u8MotorB1pwm, uint8_t u8MotorB2pwm)	;
 
 
 /**************************************************************
@@ -82,27 +78,27 @@ void vfn_Set_LeftMotors_PWM(uint8_t u8MotorB1pwm, uint8_t u8MotorB2pwm)	;
  **************************************************************/
 void vfn_Init_SteeringServo_PTB0(void)
 {
-	SIM_SCGC5 |= SIM_SCGC5_PORTB_MASK;
-	
 	SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL_MASK;
     SIM_SOPT2 &= ~(SIM_SOPT2_TPMSRC_MASK);
-    SIM_SOPT2 |= SIM_SOPT2_TPMSRC(1); 
+    SIM_SOPT2 |= SIM_SOPT2_TPMSRC(0x1U); 
   
 	SIM_SCGC6 |= SIM_SCGC6_TPM1_MASK; 
-
-	TPM1_SC = 0;
-    TPM1_CONF = 0;
+	
+	//Blow away the control registers to ensure that the counter is not running
+	TPM1_SC = 0x0U;
+    TPM1_CONF = 0x0U;
    
-	TPM1_SC = TPM_SC_PS(TPM1_CLK_PRESCALE) | TPM_SC_TOIE_MASK;;
+    //While the counter is disabled we can setup the prescaler
+	TPM1_SC = TPM_SC_PS(TPM1_CLK_PRESCALE);
     TPM1_MOD = TPM1_CLOCK/(1<<TPM1_CLK_PRESCALE)/TPM1_OVERFLOW_FREQUENCY;
                        
-    TPM1_C0SC = TPM_CnSC_MSB_MASK | TPM_CnSC_ELSB_MASK;
+    TPM1_C0SC = TPM_PWM_H;
           
 	//Enable the TPM Counter
-	TPM1_SC |= TPM_SC_CMOD(1);
+	TPM1_SC |= TPM_SC_CMOD(0x1U);
                
 	//Enable the FTM functions on the the port               
-	PORTB_PCR0 = PORT_PCR_MUX(3);     
+	PORTB_PCR0 = PORT_PCR_MUX(3U);     
 }
 
 /**************************************************************
@@ -114,68 +110,36 @@ void vfn_Init_SteeringServo_PTB0(void)
  **************************************************************/
 void vfn_Init_DCmotors(void)
 {	
-	//Setup H-Bridge enables and faults
-	PORTE_PCR21 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;   
-	PORTE_PCR20 = PORT_PCR_MUX(1); 
-	
-    SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL_MASK;
     SIM_SOPT2 &= ~(SIM_SOPT2_TPMSRC_MASK);
-    SIM_SOPT2 |= SIM_SOPT2_TPMSRC(1); 
+	SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL_MASK;
+    SIM_SOPT2 |= SIM_SOPT2_TPMSRC(0x1U); 
+    
 	SIM_SCGC6 |= SIM_SCGC6_TPM0_MASK;
-        
-    TPM0_SC = 0;
-    TPM0_CONF = 0;
+	
+    //Blow away the control registers to ensure that the counter is not running
+    TPM0_SC = 0x0U;
+    TPM0_CONF = 0x0U;
     
-    TPM0_SC = TPM_SC_PS(TPM0_CLK_PRESCALE);
-	TPM0_MOD = TPM0_MODULE;
+    //While the counter is disabled we can setup the prescaler
+    TPM0_SC = TPM_SC_PS(PS_1);
     
+	TPM0_MOD = TPM0_MODULE; //PERIOD FOR THE TPM0 
+	//TPM0_SC |= TPM_SC_CPWMS_MASK; // select the CPWMS mode.
+
 	//Setup Channels 0,1,2,3
-    TPM0_C0SC = TPM_PWM_H ;
-    TPM0_C1SC = TPM_PWM_L ; // invert the second PWM signal for a complimentary output;
-    TPM0_C2SC = TPM_PWM_H ;
-    TPM0_C3SC = TPM_PWM_L ; // invert the second PWM signal for a complimentary output;
-    
-    TPM0_C3V = STOP_MOTOR_L;
-    TPM0_C1V = STOP_MOTOR_L;
-    
-    //Enable the TPM COunter
-    TPM0_SC |= TPM_SC_CMOD(1);
-    
+    TPM0_C0SC = TPM_PWM_H;
+    TPM0_C1SC = TPM_PWM_L; // invert the second PWM signal for a complimentary output;
+    TPM0_C2SC = TPM_PWM_H;
+    TPM0_C3SC = TPM_PWM_L; // invert the second PWM signal for a complimentary output;
+
+	TPM0_SC	|= TPM_SC_CMOD(0x1U); //Enable the TPM Counter
+	
     //Enable the FTM functions on the the port
-    PORTC_PCR1 = PORT_PCR_MUX(4);
-    PORTC_PCR2 = PORT_PCR_MUX(4);     
-    PORTC_PCR3 = PORT_PCR_MUX(4);  
-    PORTC_PCR4 = PORT_PCR_MUX(4);  
+    PORTC_PCR1 = PORT_PCR_MUX(0x4U) | PORT_PCR_DSE_MASK;
+    PORTC_PCR2 = PORT_PCR_MUX(0x4U) | PORT_PCR_DSE_MASK;     
+    PORTC_PCR3 = PORT_PCR_MUX(0x4U) | PORT_PCR_DSE_MASK;  
+    PORTC_PCR4 = PORT_PCR_MUX(0x4U) | PORT_PCR_DSE_MASK;  
     
-	//Setup GPIO H-Bridge enable
-    GPIOE_PDDR =  HBRIDGE_EN_LOC;  
-    HBRIDGE_DISABLE;
 }
 
-/**************************************************************
- *  Name                 : vfn_Set_RightMotors_PWM
- *  Description          : Set the PWM command of the motors. 
- *  Parameters           : u8MotorA1pwm, forward PWM value
- *  					   u8MotorA2pwm, backward complementary PWM value
- *  Return               : void
- *  Critical/explanation : No
- **************************************************************/
-void vfn_Set_RightMotors_PWM(uint8_t u8MotorA1pwm, uint8_t u8MotorA2pwm)
-{
-	MOTORA1_RIGHT_VALUE = u8MotorA1pwm;
-	MOTORA2_RIGHT_VALUE = u8MotorA2pwm;
-}
 
-/**************************************************************
- *  Name                 : vfn_Set_LeftMotors_PWM
- *  Description          : Set the PWM command of the motors. 
- *  Parameters           : u8MotorB1pwm, forward PWM value
- *  					   u8MotorB2pwm, backward complementary PWM value
- *  Return               : void
- *  Critical/explanation : No
- **************************************************************/
-void vfn_Set_LeftMotors_PWM(uint8_t u8MotorB1pwm, uint8_t u8MotorB2pwm)
-{
-	MOTORB1_LEFT_VALUE = u8MotorB1pwm;
-	MOTORB2_LEFT_VALUE = u8MotorB2pwm;
-}

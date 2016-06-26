@@ -1,8 +1,8 @@
-Sources/mcl/uart.o: ../Sources/mcl/uart.c \
+Sources/app/DCMotors.o: ../Sources/app/DCMotors.c \
  C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/lib_ewl.prefix \
  C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/common.prefix \
  C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/ewl_c_version.h \
- ../Sources/mcl/uart.h \
+ ../Sources/app/DCMotors.h \
  C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/stdtypedef.h \
  C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/derivative.h \
  C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/MKL25Z4.h \
@@ -15,7 +15,22 @@ Sources/mcl/uart.o: ../Sources/mcl/uart.c \
  C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/limits_api.h \
  C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/ewl_lib_ext1.h \
  C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/derivative.h \
- ../Sources/mcl/CrystalClock.h
+ ../Sources/app/../mcl/GPIO.h ../Sources/app/../mcl/../mcl/ADC.h \
+ ../Sources/app/../mcl/TPM.h ../Sources/app/../mcl/../mcl/CrystalClock.h \
+ ../Sources/app/../mcl/../mcl/GPIO.h \
+ ../Sources/app/../mcl/../app/DCMotors.h ../Sources/app/../mcl/ADC.h \
+ ../Sources/app/../app/LineScanCamera.h \
+ C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/../Sources/mcl/GPIO.h \
+ C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/../Sources/mcl/ADC.h \
+ ../Sources/app/../app/ServoMotor.h \
+ ../Sources/app/../app/../app/LineScanCamera.h \
+ ../Sources/app/../app/../app/PushButtons.h \
+ ../Sources/app/../app/../app/../mcl/GPIO.h \
+ ../Sources/app/../app/../app/../app/DCMotors.h \
+ ../Sources/app/../app/../app/../app/LineScanCamera.h \
+ ../Sources/app/../app/../app/../app/ServoMotor.h \
+ C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/../Sources/mcl/TPM.h \
+ ../Sources/app/../app/PushButtons.h
 
 C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/lib_ewl.prefix:
 
@@ -23,7 +38,7 @@ C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/common.prefix:
 
 C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/ewl_c_version.h:
 
-../Sources/mcl/uart.h:
+../Sources/app/DCMotors.h:
 
 C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/stdtypedef.h:
 
@@ -49,4 +64,40 @@ C:/Freescale/CW\ MCU\ v10.6/MCU/ARM_GCC_Support/ewl/EWL_C/include/ewl_lib_ext1.h
 
 C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/derivative.h:
 
-../Sources/mcl/CrystalClock.h:
+../Sources/app/../mcl/GPIO.h:
+
+../Sources/app/../mcl/../mcl/ADC.h:
+
+../Sources/app/../mcl/TPM.h:
+
+../Sources/app/../mcl/../mcl/CrystalClock.h:
+
+../Sources/app/../mcl/../mcl/GPIO.h:
+
+../Sources/app/../mcl/../app/DCMotors.h:
+
+../Sources/app/../mcl/ADC.h:
+
+../Sources/app/../app/LineScanCamera.h:
+
+C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/../Sources/mcl/GPIO.h:
+
+C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/../Sources/mcl/ADC.h:
+
+../Sources/app/../app/ServoMotor.h:
+
+../Sources/app/../app/../app/LineScanCamera.h:
+
+../Sources/app/../app/../app/PushButtons.h:
+
+../Sources/app/../app/../app/../mcl/GPIO.h:
+
+../Sources/app/../app/../app/../app/DCMotors.h:
+
+../Sources/app/../app/../app/../app/LineScanCamera.h:
+
+../Sources/app/../app/../app/../app/ServoMotor.h:
+
+C:/Users/JAVR/Documents/CWprojects/TFC2016_CONTICAR/Project_Headers/../Sources/mcl/TPM.h:
+
+../Sources/app/../app/PushButtons.h:

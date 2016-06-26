@@ -34,19 +34,18 @@
 /*************************************/
 /*  Includes from MCU drivers        */
 /*************************************/
-#include "..\..\mcl\ADC.h"
-#include "..\..\mcl\tpm.h"
-#include "..\..\mcl\GPIO.h"
+#include "../../mcl/ADC.h"
+#include "../../mcl/tpm.h"
+#include "../../mcl/GPIO.h"
 
 /*************************************/
 
 /*************************************************************/
 /*  Includes from hardware application source codes          */
 /*************************************************************/
-#include "..\..\app\LineScanCamera.h"
+#include "../../app/LineScanCamera.h"
 #include "../../app/ServoMotor.h"
-//#include "..\..\app\DC_Motors_Control.h"
-//#include "..\..\app\Speedsensors.h"
+#include "../../app/DCMotors.h"
 /*************************************************************/
 /*============================================================================*/
 

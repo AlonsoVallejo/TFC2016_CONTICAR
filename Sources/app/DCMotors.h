@@ -1,22 +1,22 @@
 /*
- * ServoMotor.h
+ * DCMotors.h
  *
- *  Created on: Nov 20, 2015
+ *  Created on: Jun 18, 2016
  *      Author: JAVR
  */
 
-#ifndef SERVOMOTOR_H_
-#define SERVOMOTOR_H_
+#ifndef DCMOTORS_H_
+#define DCMOTORS_H_
 
 /*============================================================================*/
 /*                     AVR - EMBEDDED SYSTEMS SOFTWARE                        */
 /*============================================================================*/
 /*                        OBJECT SPECIFICATION                                */
 /*============================================================================*
- * C Include:       ServoMotor.h
+ * C Include:       DCMotors.h
  * version:         1.0 
  * created_by:      AVR
- * date_created:    Nov 20, 2015 
+ * date_created:    Jun 18, 2016 
  *=============================================================================*/
 /* DESCRIPTION :                                                              */
 /*============================================================================*/
@@ -28,10 +28,8 @@
 /*============================================================================*/
 /*  REVISION |   DATE      |  AUTHOR  | Comment     						  */
 /*----------------------------------------------------------------------------*/
-//   1.0       20/10/2015    AVR		First revision.
-//	 1.1       21/10/2015    AVR		Test the servo, function good.
-//	 1.2       07/12/2015    AVR		Add functions to improve the servo stering.
-//   1.3	   25/06/2016	 AVR		implement functions for use the push button to center the servo
+//	  1.0	 	18/06/2016		AVR		first Version
+//	  1.1		25/06/2016		AVR		Implmentet algorithm for speed control                                       							  */
 /*============================================================================*/
 /*============================================================================*/
 
@@ -39,12 +37,12 @@
 /* -------- */
 #include "stdtypedef.h"
 #include "derivative.h"
-
+#include "../mcl/GPIO.h"
+#include "../mcl/TPM.h"
+#include "../mcl/ADC.h"
 #include "../app/LineScanCamera.h"
+#include "../app/ServoMotor.h"
 #include "../app/PushButtons.h"
-#include "../Sources/mcl/TPM.h"
-#include "../Sources/mcl/ADC.h"
-
 /* Exported types and constants */
 /* ---------------------------- */
 
@@ -65,8 +63,8 @@
 
 /* Exported functions prototypes and macros */
 /* ---------------------------------------- */
-void vfn_SteeringServoController(void);
-
+void vfn_DCmotors_task(void);
+void vfn_DCMotorsSetPWM(int8_t i8MotorApwm, int8_t i8MotorBpwm);
 /* Functions prototypes */
 
 /**************************************************************
@@ -77,4 +75,4 @@ void vfn_SteeringServoController(void);
  *  Critical/explanation : No
  **************************************************************/
 
-#endif /* SERVOMOTOR_H_ */
+#endif /* DCMOTORS_H_ */

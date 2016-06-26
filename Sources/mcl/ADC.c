@@ -34,12 +34,6 @@
 /* Functions macros, constants, types and datas         */
 /* ---------------------------------------------------- */
 
-/*definitions of other ports that can be used for the ADC reading at FRDM-KL25Z*/
-#define PTB0 						(8U)
-#define PTB1 						(9U)
-#define PTC2 						(11U)
-#define PTC1 						(15U)
-
 /*definitions of ports used by TFC-SHIELD for the ADC reading at FRDM-KL25Z*/
 typedef enum
 {
@@ -51,7 +45,7 @@ typedef enum
  TFC_LINESCAN1_ADC_CHANNEL	=	(7U) ,   /*  PTD6  */
  TFC_HBRIDGE_A_IFB_CHANNEL	=	(7U) ,   /*  PTE23 */
  TFC_HBRIDGE_B_IFB_CHANNEL	=	(3U)     /*  PTE22 */
-}TFC_SHIELD_ADC_INPUTS;
+}TFC_SHIELD_ADC_INPUTS_TYPE;
 
 
 

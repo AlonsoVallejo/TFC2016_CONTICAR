@@ -12,7 +12,6 @@ C_SRCS_QUOTED += \
 "../Sources/mcl/GPIO.c" \
 "../Sources/mcl/TPM.c" \
 "../Sources/mcl/interrupts.c" \
-"../Sources/mcl/uart.c" \
 
 C_SRCS += \
 ../Sources/mcl/ADC.c \
@@ -21,7 +20,6 @@ C_SRCS += \
 ../Sources/mcl/GPIO.c \
 ../Sources/mcl/TPM.c \
 ../Sources/mcl/interrupts.c \
-../Sources/mcl/uart.c \
 
 OBJS += \
 ./Sources/mcl/ADC.o \
@@ -30,7 +28,6 @@ OBJS += \
 ./Sources/mcl/GPIO.o \
 ./Sources/mcl/TPM.o \
 ./Sources/mcl/interrupts.o \
-./Sources/mcl/uart.o \
 
 C_DEPS += \
 ./Sources/mcl/ADC.d \
@@ -39,7 +36,6 @@ C_DEPS += \
 ./Sources/mcl/GPIO.d \
 ./Sources/mcl/TPM.d \
 ./Sources/mcl/interrupts.d \
-./Sources/mcl/uart.d \
 
 OBJS_QUOTED += \
 "./Sources/mcl/ADC.o" \
@@ -48,7 +44,6 @@ OBJS_QUOTED += \
 "./Sources/mcl/GPIO.o" \
 "./Sources/mcl/TPM.o" \
 "./Sources/mcl/interrupts.o" \
-"./Sources/mcl/uart.o" \
 
 C_DEPS_QUOTED += \
 "./Sources/mcl/ADC.d" \
@@ -57,7 +52,6 @@ C_DEPS_QUOTED += \
 "./Sources/mcl/GPIO.d" \
 "./Sources/mcl/TPM.d" \
 "./Sources/mcl/interrupts.d" \
-"./Sources/mcl/uart.d" \
 
 OBJS_OS_FORMAT += \
 ./Sources/mcl/ADC.o \
@@ -66,7 +60,6 @@ OBJS_OS_FORMAT += \
 ./Sources/mcl/GPIO.o \
 ./Sources/mcl/TPM.o \
 ./Sources/mcl/interrupts.o \
-./Sources/mcl/uart.o \
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -115,14 +108,6 @@ Sources/mcl/interrupts.o: ../Sources/mcl/interrupts.c
 	@echo 'Executing target #8 $<'
 	@echo 'Invoking: ARM Ltd Windows GCC C Compiler'
 	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"Sources/mcl/interrupts.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"Sources/mcl/interrupts.o"
-	@echo 'Finished building: $<'
-	@echo ' '
-
-Sources/mcl/uart.o: ../Sources/mcl/uart.c
-	@echo 'Building file: $<'
-	@echo 'Executing target #9 $<'
-	@echo 'Invoking: ARM Ltd Windows GCC C Compiler'
-	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"Sources/mcl/uart.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"Sources/mcl/uart.o"
 	@echo 'Finished building: $<'
 	@echo ' '
 

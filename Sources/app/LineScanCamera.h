@@ -52,42 +52,37 @@ typedef enum {
 	SILOW_CLKHIGH,
 	SILOW_CLKLOW,
 	FINISH_SYNC_SIGNALS
-} LineScanSyscSignals;
+} LineScanSyscSignalsTYPE;
 
 typedef enum {
 	LSC_CLK_HIGH, 
 	LSC_CLK_LOW,
-} LineScanCLKsignals;
+} LineScanCLKsignalsTYPE;
 
 typedef enum{
 	MaxValueADC = 1024U,
 	MinValueADC = 0U,
-}ADC_Range;
+}ADC_RangeTYPE;
 
 typedef enum{
 	MaxDerivativeValue = 1024,
 	MinDerivativeValue = -1024,		
-}DerivativeSignalRangeValues;
-
-typedef enum {
-	NO_LINE_DETECTED,
-}NoLineDetected;
-
+}DerivativeSignalRangeValuesTYPE;
 
 typedef struct {
 	uint16_t quarter_period_count;
 	uint8_t  CLK_STATE;
 	uint8_t  count_pixel;
-	uint16_t  adc_get_Aout[128U];
-	int16_t   lsc_Aout_derivate[128U];
-} LineScanCamera;
+	uint16_t adc_get_Aout[128U];
+	int16_t  lsc_Aout_derivate[128U];
+} LineScanCameraTYPE;
 
 /*======================================================*/
 /* Declaration of exported constants                    */
 /*======================================================*/
-#define ErrorMin						-100
-#define ErrorMax						100
-#define	NoError							0
+#define ERROR_MIN						-100
+#define ERROR_MAX						100
+#define	NO_ERROR						0
 /*======================================================*/
 /* Definition of RAM variables                          */
 /*======================================================*/
@@ -101,6 +96,7 @@ extern int8_t sbyErrorPrev;
 /* ---------------------------------------- */
 void vfn_StateMachine_LSC_InSignals(void);
 void vfn_LineScanCameraProcessing(void);
+int8_t map(int8_t x, int8_t in_min, int8_t in_max, int8_t out_min, int8_t out_max);
 /* Functions prototypes */
 
 /**************************************************************

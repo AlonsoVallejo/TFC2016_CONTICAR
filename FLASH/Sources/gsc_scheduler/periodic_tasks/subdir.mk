@@ -37,7 +37,7 @@ OBJS_OS_FORMAT += \
 # Each subdirectory must supply rules for building sources it contributes
 Sources/gsc_scheduler/periodic_tasks/periodic_tasks_exec.o: ../Sources/gsc_scheduler/periodic_tasks/periodic_tasks_exec.c
 	@echo 'Building file: $<'
-	@echo 'Executing target #10 $<'
+	@echo 'Executing target #9 $<'
 	@echo 'Invoking: ARM Ltd Windows GCC C Compiler'
 	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"Sources/gsc_scheduler/periodic_tasks/periodic_tasks_exec.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"Sources/gsc_scheduler/periodic_tasks/periodic_tasks_exec.o"
 	@echo 'Finished building: $<'
@@ -45,7 +45,7 @@ Sources/gsc_scheduler/periodic_tasks/periodic_tasks_exec.o: ../Sources/gsc_sched
 
 Sources/gsc_scheduler/periodic_tasks/periodic_tasks_init.o: ../Sources/gsc_scheduler/periodic_tasks/periodic_tasks_init.c
 	@echo 'Building file: $<'
-	@echo 'Executing target #11 $<'
+	@echo 'Executing target #10 $<'
 	@echo 'Invoking: ARM Ltd Windows GCC C Compiler'
 	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"Sources/gsc_scheduler/periodic_tasks/periodic_tasks_init.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"Sources/gsc_scheduler/periodic_tasks/periodic_tasks_init.o"
 	@echo 'Finished building: $<'

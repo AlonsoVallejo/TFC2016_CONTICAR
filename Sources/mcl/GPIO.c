@@ -23,7 +23,8 @@
 /*  REVISION |   DATE      |  AUTHOR  | Comment     						  */
 /*----------------------------------------------------------------------------*/
 /*   1.0	    18/10/2015     AVR		add the init functions for gpios.
- *   1.1	    20/10/2015     AVR		Change the GPIO registers to FGPIO.                                                  							  */
+ *   1.1	    20/10/2015     AVR		Change the GPIO registers to FGPIO.      
+ *   1.2		25/06/2016	   AVR		implement functions to batt voltage                                            							  */
 /*============================================================================*/       
 /*============================================================================*/
 
@@ -63,15 +64,20 @@
 
 /* Inline functions */
 /* ---------------- */
-void vfn_init_userGPIO_LineScanCamera (void)		;
-void vfn_init_userGPIO_shield_DCmotors (void)		;
-void vfn_init_userGPIO_tfcshield(void)				;
-void vfn_init_userGPIO_speedSensors(void)			;
-volatile T_BOOLEAN ub_state_SpeedSensor0_PTA1(void) ;
-volatile T_BOOLEAN ub_state_SpeedSensor1_PTA2 (void);
-volatile uint16_t u16_DipSW_val(void)				;
-volatile uint8_t u8_PushButtonA_state(void)			; 
-volatile uint8_t u8_PushButtonB_state(void)			;
+void vfn_init_userGPIO_LineScanCamera (void)		  ;
+void vfn_init_userGPIO_shield_DCmotors (void)		  ;
+void vfn_init_userGPIO_tfcshield(void)				  ;
+void vfn_init_userGPIO_speedSensors(void)			  ;
+void vfn_LEDs_ctrl_BattLevel_LEDs (void)			  ;
+void IO_ports_Set_PortB_pin(uint8_t lub_pin_number)	  ;
+void IO_ports_Clear_PortB_pin(uint8_t lub_pin_number) ;
+void IO_ports_Toggle_PortB_pin(uint8_t lub_pin_number);
+volatile T_BOOLEAN ub_state_SpeedSensor0_PTA1(void)   ;
+volatile T_BOOLEAN ub_state_SpeedSensor1_PTA2 (void)  ;
+volatile uint16_t u16_DipSW_val(void)				  ;
+volatile uint8_t u8_PushButtonA_state(void)			  ; 
+volatile uint8_t u8_PushButtonB_state(void)			  ;
+
 /**************************************************************
  *  Name                 : vfn_init_userGPIO_LineScanCamera
  *  Description          : contains all the GPIO peripheral configuration
@@ -88,11 +94,11 @@ void vfn_init_userGPIO_LineScanCamera (void)
 				  SIM_SCGC5_PORTD_MASK |
 				  SIM_SCGC5_PORTE_MASK ;  // enable all GPIO ports of mcu.
 		
-	PORTD_PCR7 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; //configure the PTD3 is GPIO.
-	PORTE_PCR1 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; //configure the PTC1 is GPIO.
+	PORTD_PCR7 = PORT_PCR_MUX(1U) | PORT_PCR_DSE_MASK; //configure the PTD3 is GPIO.
+	PORTE_PCR1 = PORT_PCR_MUX(1U) | PORT_PCR_DSE_MASK; //configure the PTC1 is GPIO.
 		
-	PORTD_PCR5 = PORT_PCR_MUX(0); //Make sure AO signal goes to an analog input
-	PORTD_PCR6 = PORT_PCR_MUX(0); //Make sure AO signal goes to an analog input
+	PORTD_PCR5 = PORT_PCR_MUX(0U); //Make sure AO signal goes to an analog input
+	PORTD_PCR6 = PORT_PCR_MUX(0U); //Make sure AO signal goes to an analog input
 	
 	FGPIOD_PDDR |= GPIO_PIN(7U); // Make sure the CLK and SI pins are outputs
 	FGPIOE_PDDR |= GPIO_PIN(1U); // TAOS clock pin
@@ -100,10 +106,10 @@ void vfn_init_userGPIO_LineScanCamera (void)
 	CAMERA_CLK_LOW;
 	CAMERA_SI_LOW;
 		
-	PORTA_PCR12 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; //configure the PTD3 is GPIO.
+	PORTA_PCR12 = PORT_PCR_MUX(1U) | PORT_PCR_DSE_MASK; //configure the PTD3 is GPIO.
 	FGPIOA_PDDR |= GPIO_PIN(12U); // Make sure the CLK and SI pins are outputs
 		
-	PORTA_PCR13 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; //configure the PTD3 is GPIO.
+	PORTA_PCR13 = PORT_PCR_MUX(1U) | PORT_PCR_DSE_MASK; //configure the PTD3 is GPIO.
 	FGPIOA_PDDR |= GPIO_PIN(13U); // Make sure the CLK and SI pins are outputs
 }
 
@@ -117,8 +123,10 @@ void vfn_init_userGPIO_LineScanCamera (void)
  **************************************************************/
 void vfn_init_userGPIO_shield_DCmotors (void)
 {
-	PORTE_PCR21 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; //configure the PTE21 as GPIO (ENABLE)
-	FGPIOE_PDDR |= GPIO_PIN(21U); // Enable H - bridge pin
+	//Setup H-Bridge enables and faults
+	PORTE_PCR21 = PORT_PCR_MUX(1);   
+	PORTE_PCR20 = PORT_PCR_MUX(1); 
+	
 	ENABLE_H_BRIGDE;
 }
 
@@ -163,8 +171,8 @@ void vfn_init_userGPIO_tfcshield(void)
  **************************************************************/
 void vfn_init_userGPIO_speedSensors(void)
 {
-	PORTA_PCR1  = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; //configure the PTA1 as GPIO (ENABLE)
-	PORTA_PCR2  = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; //configure the PTA2 as GPIO (ENABLE)
+	PORTA_PCR1  = PORT_PCR_MUX(1U) | PORT_PCR_DSE_MASK; //configure the PTA1 as GPIO (ENABLE)
+	PORTA_PCR2  = PORT_PCR_MUX(1U) | PORT_PCR_DSE_MASK; //configure the PTA2 as GPIO (ENABLE)
 }
 
 /**************************************************************
@@ -214,7 +222,7 @@ volatile T_BOOLEAN ub_state_SpeedSensor1_PTA2 (void)
 volatile uint16_t u16_DipSW_val(void)
 {
 	volatile static uint16_t DIP_Val = 0;
-	DIP_Val = (FGPIOE_PDIR>>2) & 0xF;
+	DIP_Val = (FGPIOE_PDIR>>2U) & 0xF;
 	return DIP_Val;		
 }
 
@@ -227,10 +235,10 @@ volatile uint16_t u16_DipSW_val(void)
  *  					   0 - button no pressed
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t u8_PushButtonA_state(void) 
+volatile T_BOOLEAN u8_PushButtonA_state(void) 
 {
-	static uint8_t SW1_Val=0;
-	SW1_Val = (FGPIOC_PDIR>>13) & 0x1;
+	static uint8_t SW1_Val=0U;
+	SW1_Val = (FGPIOC_PDIR>>13U) & 0x1;
 	return SW1_Val;		
 }
 /**************************************************************
@@ -242,9 +250,140 @@ volatile uint8_t u8_PushButtonA_state(void)
  *  					   0 - button no pressed
  *  Critical/explanation : No
  **************************************************************/
-volatile uint8_t PUSH_BUTTON_2_STATE(void)
+volatile T_BOOLEAN u8_PushButtonB_state(void)
 {
-	static uint8_t SW2_Val=0;
-	SW2_Val = (FGPIOC_PDIR>>17) & 0x1;
+	static uint8_t SW2_Val=0U;
+	SW2_Val = (FGPIOC_PDIR>>17U) & 0x1;
 	return SW2_Val;		
+}
+
+/**************************************************************
+ *  Name                 :	vfn_LEDs_ctrl_BattLevel_LEDs
+ *  Description          :	indicates batt voltage
+ *  Parameters           :  [Input, Output, Input / output]
+ *  Return               :
+ *  Critical/explanation :    [yes / No]
+ **************************************************************/
+#define BATT_LEDS_VLTG_LVL4 11
+#define BATT_LEDS_VLTG_LVL3 10
+#define BATT_LEDS_VLTG_LVL2 9
+#define BATT_LEDS_VLTG_LVL1 8
+void vfn_LEDs_ctrl_BattLevel_LEDs (void)
+{
+	uint16_t BatSenseADC_Value;
+	uint8_t lub_VoltageLevel = 0;
+	/* Read voltage from ADC */
+	BatSenseADC_Value = u10_adc0_readBatteryVoltage();
+	/* Determine level according thresholds */
+	if(BatSenseADC_Value >= 99) // Full voltage level (from 6.7 to above)
+	{
+		lub_VoltageLevel = 4;
+	}
+	else if((BatSenseADC_Value < 400) && (BatSenseADC_Value >= 380)) // Voltage level 3 (from 6.2 to 6.7)
+	{
+		lub_VoltageLevel = 3;
+	}
+	else if((BatSenseADC_Value < 380) && (BatSenseADC_Value >= 360)) // Voltage level 2 (from 5.7 to 6.2)
+	{
+		lub_VoltageLevel = 2;
+	}
+	else if((BatSenseADC_Value < 360) && (BatSenseADC_Value >= 340)) // Voltage level 1 (from 5.2 to 5.7)
+	{
+		lub_VoltageLevel = 1;
+	}
+	else // Low voltage level (5.2 and below)
+	{
+		lub_VoltageLevel = 0;
+	}
+	/* Set LEDs state according level */
+	switch(lub_VoltageLevel)
+	{
+		case 4:
+			/* Turn On all the batt LEDs */
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL4);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL3);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL2);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL1);
+		break;
+		case 3:
+			/* Turn On LEDs from LVL1 to LVL 3 only */
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL4);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL3);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL2);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL1);
+		break;
+		case 2:
+			/* Turn On LEDs from LVL1 to LVL 2 only */
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL4);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL3);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL2);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL1);
+		break;
+		case 1:
+			/* Turn On LED LVL1 only */
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL4);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL3);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL2);
+			IO_ports_Set_PortB_pin(BATT_LEDS_VLTG_LVL1);
+		break;
+		case 0:
+			/* Togle LED LVL1 only */
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL4);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL3);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL2);
+			IO_ports_Toggle_PortB_pin(BATT_LEDS_VLTG_LVL1);
+		break;
+		default:
+			/* Togle LED LVL4 only */
+			IO_ports_Toggle_PortB_pin(BATT_LEDS_VLTG_LVL4);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL3);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL2);
+			IO_ports_Clear_PortB_pin(BATT_LEDS_VLTG_LVL1);
+		break;
+	}
+}
+
+/**************************************************************
+ *  Name                 :	IO_ports_Set_PortB_pin
+ *  Description          :
+ *  Parameters           :  [Input, Output, Input / output]
+ *  Return               :
+ *  Critical/explanation :    [yes / No]
+ **************************************************************/
+void IO_ports_Set_PortB_pin(uint8_t lub_pin_number)
+{
+	if(lub_pin_number < 32)
+	{
+		GPIOB_PSOR = GPIO_PIN(lub_pin_number);
+	}
+}
+
+/**************************************************************
+ *  Name                 :	IO_ports_Clear_PortB_pin
+ *  Description          :
+ *  Parameters           :  [Input, Output, Input / output]
+ *  Return               :
+ *  Critical/explanation :    [yes / No]
+ **************************************************************/
+void IO_ports_Clear_PortB_pin(uint8_t lub_pin_number)
+{
+	if(lub_pin_number < 32)
+	{
+		GPIOB_PCOR = GPIO_PIN(lub_pin_number);
+	}
+}
+
+/**************************************************************
+ *  Name                 :	IO_ports_Toggle_PortB_pin
+ *  Description          :
+ *  Parameters           :  [Input, Output, Input / output]
+ *  Return               :
+ *  Critical/explanation :    [yes / No]
+ **************************************************************/
+void IO_ports_Toggle_PortB_pin(uint8_t lub_pin_number)
+{
+	if(lub_pin_number < 32)
+	{
+		GPIOB_PTOR = GPIO_PIN(lub_pin_number);
+	}
 }

@@ -41,6 +41,9 @@ void periodic_tasks_init_MclDrvs(void)
 	vfn_init_userGPIO_LineScanCamera();
 	vfn_init_adc0();
 	vfn_Init_SteeringServo_PTB0();
+	vfn_init_userGPIO_shield_DCmotors();
+	vfn_Init_DCmotors();
+	vfn_init_userGPIO_tfcshield();
 }
 
 /**************************************************************
